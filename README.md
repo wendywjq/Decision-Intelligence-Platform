@@ -71,3 +71,5 @@ npm start         # 构建后，API 同时提供 dist 静态资源，端口 3001
 ![分层画布](docs/screenshots/graph.jpg)
 
 二、三级页面、版本管理、特征血缘和策略排查的补全范围见 [详情页说明](docs/detail-pages.md)。
+
+已获授权的 6 个 CVID、31 条原始策略排查日志随仓库提供，启动后自动导入；时间窗和哈希见 `fixtures/zeus-logs-manifest.json`。

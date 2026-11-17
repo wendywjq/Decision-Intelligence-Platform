@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "window": {
+    "startTime": 1794823747,
+    "endTime": 1794910147
+  },
+  "counts": {
+    "1300276491424": {
+      "basic": 1,
+      "detail": 1
+    },
+    "255317666688": {
+      "basic": 9,
+      "detail": 9
+    },
+    "1300247749367": {
+      "basic": 4,
+      "detail": 4
+    },
+    "255319725675": {
+      "basic": 5,
+      "detail": 5
+    },
+    "255319033440": {
+      "basic": 6,
+      "detail": 6
+    },
+    "255319025253": {
+      "basic": 6,
+      "detail": 6
+    }
+  },
+  "total": 31,
+  "sha256": "138324df868835e155c9fdec014bdb840582240b350409734a7e605a694e7b21",
+  "parts": [
+    {
+      "path": "fixtures/zeus-logs/part-000.bin",
+      "size": 262144,
+      "sha256": "9bfea2b701eef003e9ab235c078c5f639747b13df6ab5ecf2846c4ec3c61e377"
+    },
+    {
+      "path": "fixtures/zeus-logs/part-001.bin",
+      "size": 262144,
+      "sha256": "efa95a9ca2450d14ac0ba2024d2512fe339f877a5776080115091b9476913c40"
+    },
+    {
+      "path": "fixtures/zeus-logs/part-002.bin",
+      "size": 48942,
+      "sha256": "ce4ba1779195bae2e3fd01eb6380d03dd66b86f34e6b1667bc0ac9ec02af321e"
+    }
+  ],
+  "publication": "Original log examples explicitly approved for public publication by the repository owner."
+}

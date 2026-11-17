@@ -47,7 +47,9 @@ export function syncDetailFixtures(db: Database.Database, loadFixtures = true) {
   if (!loadFixtures) return;
   const manifests = [
     "fixtures/zeus-details-manifest.json",
-    "data/zeus-source/detail-pages/logs-manifest.json",
+    existsSync("fixtures/zeus-logs-manifest.json")
+      ? "fixtures/zeus-logs-manifest.json"
+      : "data/zeus-source/detail-pages/logs-manifest.json",
   ];
   for (const path of manifests) {
     if (!existsSync(path)) continue;

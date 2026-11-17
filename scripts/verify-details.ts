@@ -43,6 +43,21 @@ for (const { data } of db
   assert.equal(n, q.total);
   assert.equal(q.total, q.detailTotal);
 }
+const logsManifest = JSON.parse(
+  readFileSync("fixtures/zeus-logs-manifest.json", "utf8"),
+);
+for (const [cv, count] of Object.entries(logsManifest.counts) as [
+  string,
+  any,
+][]) {
+  const actual = db
+    .prepare(
+      "SELECT COUNT(*) n,COUNT(detail) d FROM source_request_logs WHERE cv_id=?",
+    )
+    .get(cv) as any;
+  assert.equal(actual.n, count.basic);
+  assert.equal(actual.d, count.detail);
+}
 console.log(
   JSON.stringify(
     {
@@ -56,4 +71,5 @@ console.log(
     2,
   ),
 );
+
 db.close();
