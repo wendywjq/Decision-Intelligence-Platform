@@ -603,3 +603,142 @@ a {
   height: 40px;
   object-fit: contain;
 }
+.source-json {
+  max-height: 65vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 16px;
+  background: #f8f9fc;
+  font:
+    12px/1.7 SFMono-Regular,
+    Consolas,
+    monospace;
+}
+.source-value {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.source-table-filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0;
+}
+.source-table-filters > .ant-input-affix-wrapper,
+.source-table-filters > .ant-input-search {
+  max-width: 480px;
+}
+.source-nested {
+  padding: 16px;
+  background: #fafbfe;
+}
+.source-nested-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.risk-tag-layout {
+  display: flex;
+  gap: 20px;
+}
+.risk-tag-tree {
+  flex: 0 0 300px;
+  max-height: 75vh;
+  overflow: auto;
+  border-right: 1px solid #eee;
+  padding-right: 15px;
+}
+.risk-tag-layout > .ant-table-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+.source-graph-canvas {
+  height: calc(100vh - 260px);
+  min-height: 500px;
+  border: 1px solid #e5e7ed;
+  background: #fafbfe;
+}
+.source-graph-canvas .react-flow__node {
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+.source-flow-node {
+  border: 1px solid #8aa5da;
+  border-radius: 5px;
+  background: white;
+  min-height: 76px;
+  height: 100%;
+  width: 100%;
+  box-shadow: 0 3px 8px #00000008;
+  position: relative;
+}
+.source-flow-title {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e9edf5;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.source-flow-title b {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 170px;
+  overflow-wrap: anywhere;
+}
+.source-flow-title > .ant-tag {
+  font-size: 10px;
+  margin: 0;
+}
+.source-flow-counts {
+  padding: 8px 12px;
+  color: #777;
+  font-size: 12px;
+}
+.source-flow-template {
+  background: #f7f5ff99;
+  border: 1px dashed #a297d4;
+}
+.source-flow-template > .source-flow-title {
+  background: #eee9ff88;
+}
+.source-diff-context {
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 400px;
+  overflow: auto;
+  min-width: 220px;
+}
+.source-diff-line {
+  padding: 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.diff-added {
+  background: #dff5e5;
+  color: #277a3a;
+  padding: 2px 4px;
+}
+.diff-removed {
+  background: #ffe8e8;
+  color: #ad3939;
+  padding: 2px 4px;
+}
+.source-diff-code {
+  white-space: pre-wrap;
+  max-height: 400px;
+  overflow: auto;
+  font-size: 12px;
+}
+.source-flow-node .react-flow__handle {
+  width: 7px;
+  height: 7px;
+}
+.source-nested .ant-table-expanded-row > td {
+  background: #fff !important;
+}

@@ -1,3 +1,4 @@
+import { formatDate } from "./date";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -22,7 +23,7 @@ import {
   PlusSquareOutlined,
   QuestionCircleOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Module, Row } from "./catalog";
 import {
   EntityEditor,
@@ -34,10 +35,18 @@ import {
 import { api, entityPath } from "./api";
 import { SceneRules } from "./SceneRules";
 import { GraphEditor } from "./graph";
+import {
+  ImportedSceneRules,
+  ImportedFeature,
+  RiskTagExplorer,
+} from "./SourceExamples";
+import { ReleaseCreator } from "./SourceRelease";
 import { ToolsPage } from "./ToolsPage";
 export function ModulePage({ module: m }: { module: Module }) {
   const nav = useNavigate();
   const { message } = App.useApp();
+  const [params] = useSearchParams();
+  const [releaseCreate, setReleaseCreate] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [tab, setTab] = useState(m.tabs?.[0]);
   const [page, setPage] = useState(1);
@@ -49,6 +58,9 @@ export function ModulePage({ module: m }: { module: Module }) {
   const [flat, setFlat] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
   const [chart, setChart] = useState<Row>();
+  useEffect(() => {
+    if (params.get("id")) setFilters({ q: params.get("id")! });
+  }, [params]);
   const query = new URLSearchParams({
     page: String(page),
     pageSize: String(pageSize),
@@ -79,6 +91,24 @@ export function ModulePage({ module: m }: { module: Module }) {
     }
   };
   function openDetail(r: Row) {
+    if (r.sourceImported && m.kind === "graph") {
+      nav(
+        (r.sourceKind === "template"
+          ? "/layerScene/template/detail"
+          : "/layerScene/detail") +
+          "?id=" +
+          r.id,
+      );
+      return;
+    }
+    if (r.sourceImported && m.key === "featureService") {
+      nav("/featureDetails?id=" + r.id);
+      return;
+    }
+    if (r.sourceImported && m.kind === "release") {
+      nav("/release/detail?id=" + r.id);
+      return;
+    }
     if (m.kind === "scene") return;
     else if (m.kind === "rule") nav("/ruleDetails?id=" + r.id);
     else if (m.kind === "analysis") setChart(r);
@@ -116,6 +146,7 @@ export function ModulePage({ module: m }: { module: Module }) {
             ? 130
             : undefined,
       render: (v: any, r: Row) => {
+        if (key === "id" && m.key === "featureService") return r.sourceId || v;
         if (key === "name")
           return (
             <>
@@ -136,9 +167,7 @@ export function ModulePage({ module: m }: { module: Module }) {
         if (key === "updatedAt" || key === "createdAt")
           return (
             <span>
-              {String(v || "—")
-                .slice(0, 19)
-                .replace("T", " ")}
+              {formatDate(v)}
               <br />
               <span className="muted">{r.owner}</span>
             </span>
@@ -186,7 +215,28 @@ export function ModulePage({ module: m }: { module: Module }) {
       key: "actions",
       width: m.kind === "release" ? 340 : 180,
       render: (_: any, r: Row) =>
-        m.kind === "release" ? (
+        m.kind === "release" && r.sourceImported ? (
+          <Space wrap>
+            <Button
+              size="small"
+              onClick={() => nav("/release/detail?id=" + r.id)}
+            >
+              变更内容
+            </Button>
+            <Button
+              size="small"
+              onClick={() => nav("/release/experiment-detail?id=" + r.id)}
+            >
+              实验详情
+            </Button>
+            <Button
+              size="small"
+              onClick={() => nav("/release/gray-detail?id=" + r.id)}
+            >
+              灰度详情
+            </Button>
+          </Space>
+        ) : m.kind === "release" ? (
           <Space wrap>
             <Button size="small" onClick={() => setDetail(r)}>
               变更内容
@@ -301,6 +351,10 @@ export function ModulePage({ module: m }: { module: Module }) {
             type="primary"
             icon={<PlusSquareOutlined />}
             onClick={() => {
+              if (m.kind === "release") {
+                setReleaseCreate(true);
+                return;
+              }
               setEdit(undefined);
               setEditor(true);
             }}
@@ -453,48 +507,60 @@ export function ModulePage({ module: m }: { module: Module }) {
           action={<Button onClick={reload}>重试</Button>}
         />
       )}
-      <Table
-        className="data-table"
-        rowKey="id"
-        columns={columns}
-        loading={loading}
-        dataSource={rows}
-        scroll={{ x: "max-content" }}
-        rowSelection={
-          batchMode || m.key === "tag"
-            ? { selectedRowKeys: selected, onChange: setSelected }
-            : undefined
-        }
-        expandable={
-          m.kind === "scene"
-            ? {
-                expandedRowRender: (r) => (
-                  <SceneRules module={m.key} id={r.id} />
-                ),
-                expandRowByClick: true,
-              }
-            : undefined
-        }
-        pagination={{
-          total: m.kind === "audit" ? rows.length : data?.total,
-          current: page,
-          pageSize,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (n) => "共 " + n + " 条",
-          onChange: (p, s) => {
-            setPage(p);
-            setPageSize(s);
-          },
-        }}
-        locale={{
-          emptyText: (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="暂无数据"
-            />
-          ),
-        }}
+      {m.key === "tag" && tab === "风险标签" ? (
+        <RiskTagExplorer />
+      ) : (
+        <Table
+          className="data-table"
+          rowKey="id"
+          columns={columns}
+          loading={loading}
+          dataSource={rows}
+          scroll={{ x: "max-content" }}
+          rowSelection={
+            batchMode || m.key === "tag"
+              ? { selectedRowKeys: selected, onChange: setSelected }
+              : undefined
+          }
+          expandable={
+            m.kind === "scene"
+              ? {
+                  expandedRowRender: (r) =>
+                    r.sourceImported ? (
+                      <ImportedSceneRules module={m.key} id={r.id} />
+                    ) : (
+                      <SceneRules module={m.key} id={r.id} />
+                    ),
+                  expandRowByClick: true,
+                }
+              : undefined
+          }
+          pagination={{
+            total: m.kind === "audit" ? rows.length : data?.total,
+            current: page,
+            pageSize,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (n) => "共 " + n + " 条",
+            onChange: (p, s) => {
+              setPage(p);
+              setPageSize(s);
+            },
+          }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="暂无数据"
+              />
+            ),
+          }}
+        />
+      )}
+      <ReleaseCreator
+        open={releaseCreate}
+        onClose={() => setReleaseCreate(false)}
+        onSaved={reload}
       />
       <EntityEditor
         module={m}

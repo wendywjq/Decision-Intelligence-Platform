@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-17T08:32:37.132634+00:00",
+  "selection": {
+    "sceneIds": [
+      3503,
+      32707,
+      3509,
+      3510,
+      5005,
+      21715,
+      21716,
+      21717,
+      21718,
+      21719
+    ],
+    "graphIds": [
+      77000,
+      34214,
+      31844
+    ],
+    "groupIds": [
+      114000,
+      77004,
+      34908,
+      34909
+    ],
+    "releaseIds": [
+      27049,
+      13046,
+      51281,
+      65069,
+      91031
+    ]
+  },
+  "counts": {
+    "scenes": 10,
+    "graphs": 3,
+    "groups": 343,
+    "rules": 4130,
+    "features": 4385,
+    "tags": 1052,
+    "releases": 5,
+    "templates": 11,
+    "decisions": 23
+  },
+  "bindingCounts": {
+    "scene": 11260,
+    "groups": 11147
+  },
+  "errors": [],
+  "unresolvedFeatureNames": [
+    "factor_consec_765_dp_userid_device_cumulate_1_7d_highrisk",
+    "factor_receive_uid",
+    "factor_rt_s_cat1name"
+  ],
+  "sha256": "89abfe8cbeeb11084b0836892fa97f91292b3eca8ec53129ff284fbfb10cd3e5",
+  "missingFeatures": [
+    {
+      "id": 2372525,
+      "name": "factor_consec_765_dp_userid_device_cumulate_1_7d_highrisk",
+      "reason": "源平台返回因子不存在"
+    },
+    {
+      "id": 45614,
+      "name": "factor_receive_uid",
+      "reason": "源平台返回因子不存在"
+    },
+    {
+      "id": 2379153,
+      "name": "factor_rt_s_cat1name",
+      "reason": "源平台返回因子不存在"
+    }
+  ],
+  "sourceCountMismatches": [
+    {
+      "taskId": 27049,
+      "section": "grayStages",
+      "stage": 1,
+      "table": "comparison",
+      "sourceTotal": 213,
+      "returned": 198,
+      "reason": "已继续分页，源接口返回空页；保留源计数与实际返回条目，不补造记录"
+    },
+    {
+      "taskId": 27049,
+      "section": "grayStages",
+      "stage": 2,
+      "table": "comparison",
+      "sourceTotal": 246,
+      "returned": 231,
+      "reason": "已继续分页，源接口返回空页；保留源计数与实际返回条目，不补造记录"
+    },
+    {
+      "taskId": 27049,
+      "section": "grayStages",
+      "stage": 3,
+      "table": "comparison",
+      "sourceTotal": 215,
+      "returned": 200,
+      "reason": "已继续分页，源接口返回空页；保留源计数与实际返回条目，不补造记录"
+    },
+    {
+      "taskId": 13046,
+      "section": "grayStages",
+      "stage": 1,
+      "table": "comparison",
+      "sourceTotal": 3,
+      "returned": 2,
+      "reason": "已继续分页，源接口返回空页；保留源计数与实际返回条目，不补造记录"
+    },
+    {
+      "taskId": 13046,
+      "section": "grayStages",
+      "stage": 2,
+      "table": "comparison",
+      "sourceTotal": 3,
+      "returned": 2,
+      "reason": "已继续分页，源接口返回空页；保留源计数与实际返回条目，不补造记录"
+    },
+    {
+      "taskId": 13046,
+      "section": "grayStages",
+      "stage": 3,
+      "table": "comparison",
+      "sourceTotal": 3,
+      "returned": 2,
+      "reason": "已继续分页，源接口返回空页；保留源计数与实际返回条目，不补造记录"
+    }
+  ],
+  "parts": [
+    {
+      "path": "zeus-examples/part-000.bin",
+      "size": 262144,
+      "sha256": "4029ac3b3ac50bfbc38e2d4cc3de48ec56be083c49a2c4344189a4f0747b2f57"
+    },
+    {
+      "path": "zeus-examples/part-001.bin",
+      "size": 262144,
+      "sha256": "861107b6b62a57188400d8f64e2ea3a82c6be1d84c0592a256acfbd586de2145"
+    },
+    {
+      "path": "zeus-examples/part-002.bin",
+      "size": 262144,
+      "sha256": "9811bbf71d83a090ce4738822a3ded8bda124cab4e9a2e249aaada97d5fe0f40"
+    },
+    {
+      "path": "zeus-examples/part-003.bin",
+      "size": 262144,
+      "sha256": "cdaeaede3db7de6ab5e93ae06f62fbc14bfb8f89228e7eb31ed43647cd646119"
+    },
+    {
+      "path": "zeus-examples/part-004.bin",
+      "size": 262144,
+      "sha256": "8686d1018582841d8da0fb978a15a97bdd46adf6e35ab72283885cff64fd3032"
+    },
+    {
+      "path": "zeus-examples/part-005.bin",
+      "size": 262144,
+      "sha256": "483f9b3fd10ab918a36e886c560aa530866f68feaf737ab5b2ed702ebf27f15a"
+    },
+    {
+      "path": "zeus-examples/part-006.bin",
+      "size": 262144,
+      "sha256": "32d222d11982032b30b709cb9f815da67b5d1eddfdcaef746a500758c309fa71"
+    },
+    {
+      "path": "zeus-examples/part-007.bin",
+      "size": 262144,
+      "sha256": "f68a9e25ef0e8159bb2c7c0de4f57de2332182facc6da9e63fdb5fb2ede9e218"
+    },
+    {
+      "path": "zeus-examples/part-008.bin",
+      "size": 262144,
+      "sha256": "1a12676733d9fe4b979c8f1c985138e909d414f12ce3940a41b54b3f15b90e60"
+    },
+    {
+      "path": "zeus-examples/part-009.bin",
+      "size": 262144,
+      "sha256": "4c80d21d8e1d02378d7f512d778880ab7eca45d6f3dd012ed1e06f88d6d4c3ad"
+    },
+    {
+      "path": "zeus-examples/part-010.bin",
+      "size": 262144,
+      "sha256": "c9004cede4d577d9109a01ef0d7006213a4b4370dc0daf51560704f4ee00e4a3"
+    },
+    {
+      "path": "zeus-examples/part-011.bin",
+      "size": 262144,
+      "sha256": "314f5b29472b5161169cda23ede0052cb2da1f7e7c85e940f3ea8d511f0250af"
+    },
+    {
+      "path": "zeus-examples/part-012.bin",
+      "size": 262144,
+      "sha256": "2defa2551055bcdc7f801e3275b51377098d0c70fd94db11e6fa1c04fe24e52a"
+    },
+    {
+      "path": "zeus-examples/part-013.bin",
+      "size": 262144,
+      "sha256": "67c213a8fd59e55dd872be83c1e30fb23b4cead9ae36f2966661179484017168"
+    },
+    {
+      "path": "zeus-examples/part-014.bin",
+      "size": 262144,
+      "sha256": "78f8ed64a6334a77b65483ae46f6c7b9e6bd67e99e1a92f500de08b113ffe736"
+    },
+    {
+      "path": "zeus-examples/part-015.bin",
+      "size": 262144,
+      "sha256": "05e94bb6b95c1f7b258e337aefa034c1b1a6061230a0510874da713933b3dbc6"
+    },
+    {
+      "path": "zeus-examples/part-016.bin",
+      "size": 262144,
+      "sha256": "b1c2e0d304a0c07f1ee74ed6e98ca4eaa1663000d1ec98b8fc6a7ed434e7896f"
+    },
+    {
+      "path": "zeus-examples/part-017.bin",
+      "size": 262144,
+      "sha256": "74908ae024d0d5fa19c6e6d4849496bd151db71b2586f34b3592ad6e1f39dc7b"
+    },
+    {
+      "path": "zeus-examples/part-018.bin",
+      "size": 262144,
+      "sha256": "f5777d281ed354ee1bc9245170a65828c5f7a35fad7b3d3efaba4ae8d40c15d7"
+    },
+    {
+      "path": "zeus-examples/part-019.bin",
+      "size": 262144,
+      "sha256": "423e5a5e34b919c8761535b2018154f96bfe078ce49a57481fc4a9c18699b28d"
+    },
+    {
+      "path": "zeus-examples/part-020.bin",
+      "size": 262144,
+      "sha256": "613f0abd830d274d14bb6ddf8225ecaebadb5cf93d1885e98724f5986cbb761e"
+    },
+    {
+      "path": "zeus-examples/part-021.bin",
+      "size": 262144,
+      "sha256": "e0c1ebd2f45aa79829485720e1cc1d3a112422fadac9fe2d6ef9973c4a7a07cb"
+    },
+    {
+      "path": "zeus-examples/part-022.bin",
+      "size": 262144,
+      "sha256": "cc87d03bb39a0c3b71006eaa177cf98b9f56cb5e0ba5dbaad5eee7b54a67e776"
+    },
+    {
+      "path": "zeus-examples/part-023.bin",
+      "size": 262144,
+      "sha256": "776f6a4eaac2f86bfdf50269b066c5a394684256b8bc130b14758a4f943a9986"
+    },
+    {
+      "path": "zeus-examples/part-024.bin",
+      "size": 262144,
+      "sha256": "0cb6055a59b82e84f5e9de1412eeceb03be4ac184929c032a14422934ae56f9e"
+    },
+    {
+      "path": "zeus-examples/part-025.bin",
+      "size": 262144,
+      "sha256": "e1f2e16cd8ecead764765e5639cf7f958f9c359381328f4264a09a80cbcf2593"
+    },
+    {
+      "path": "zeus-examples/part-026.bin",
+      "size": 262144,
+      "sha256": "fd8c70826e3631affad40093d7275236a14950c10be0f2cf40eb117ce9745cee"
+    },
+    {
+      "path": "zeus-examples/part-027.bin",
+      "size": 262144,
+      "sha256": "f389059de15a280ea2eccc5e877eac638dd117699b8b286247c40cc6ec9bff6a"
+    },
+    {
+      "path": "zeus-examples/part-028.bin",
+      "size": 262144,
+      "sha256": "1d47f79c49dffd6dd7fa9b723bc06940131062ecbb07e3b29184494518bb5603"
+    },
+    {
+      "path": "zeus-examples/part-029.bin",
+      "size": 262144,
+      "sha256": "44385d850d9b2874333a22333f3dfefe52ac8751929eaaf5eb068cca4ecc07a9"
+    },
+    {
+      "path": "zeus-examples/part-030.bin",
+      "size": 262144,
+      "sha256": "09d3c74efb2f2ad3abb57680803822875feb94f44a493143e1737866bf2c4cb8"
+    },
+    {
+      "path": "zeus-examples/part-031.bin",
+      "size": 262144,
+      "sha256": "4bb9be75f091b9e4075cf3ad7cb02b98a450063c3a9f2172cc69a4156582078d"
+    },
+    {
+      "path": "zeus-examples/part-032.bin",
+      "size": 262144,
+      "sha256": "5bafc0df8a6b7dfb0e326714de3300245ff6b7aa67b8113016dce1059a96b5f7"
+    },
+    {
+      "path": "zeus-examples/part-033.bin",
+      "size": 262144,
+      "sha256": "1d6fa77ee30e15a1810940f62393d0bac058ac38cf71510e61aaef8754c360e1"
+    },
+    {
+      "path": "zeus-examples/part-034.bin",
+      "size": 262144,
+      "sha256": "f66f76b213cd22ae6a63b171c7f9e49695548656673128dd580c6fa186b37a60"
+    },
+    {
+      "path": "zeus-examples/part-035.bin",
+      "size": 262144,
+      "sha256": "a1d3e6ee333e046b535f4f5d12b746bec207c6a7060164903d9a17f4dae1b43e"
+    },
+    {
+      "path": "zeus-examples/part-036.bin",
+      "size": 262144,
+      "sha256": "25e0455a74b3c49cbc786f0ef92d609d34885a2221c452ebf402f25902cefba4"
+    },
+    {
+      "path": "zeus-examples/part-037.bin",
+      "size": 262144,
+      "sha256": "a8467e12d2f9a3a5597291c6cd83443749fffbf0065e1264d55f99bfefceb685"
+    },
+    {
+      "path": "zeus-examples/part-038.bin",
+      "size": 222755,
+      "sha256": "cb6e4aacb83a7ea9868437570218f3f12f9c4a284d5c57ae42cfce5d4f6f0bef"
+    }
+  ]
+}

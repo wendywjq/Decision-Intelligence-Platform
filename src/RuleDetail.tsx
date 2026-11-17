@@ -23,6 +23,7 @@ import { api, entityPath } from "./api";
 import { moduleMap } from "./catalog";
 import { EntityEditor, PageHeader, Section, useRemote } from "./components";
 import { VersionList } from "./ModulePage";
+import { ImportedRulePage } from "./SourceExamples";
 export function RuleDetail() {
   const [params] = useSearchParams();
   const id = Number(params.get("id"));
@@ -75,6 +76,7 @@ export function RuleDetail() {
       />
     );
   if (!rule) return <p>加载中...</p>;
+  if (rule.sourceImported) return <ImportedRulePage id={id} row={rule} />;
   const conditions = rule.expression?.match(
     /^([A-Za-z_]\w*)\s*(>=|<=|==|!=|>|<)\s*(.*)$/,
   );

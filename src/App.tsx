@@ -40,6 +40,9 @@ import {
 import { groups, moduleMap } from "./catalog";
 import { ModulePage } from "./ModulePage";
 import { RuleDetail } from "./RuleDetail";
+import { SourceGraphPage } from "./SourceGraph";
+import { ImportedFeaturePage } from "./SourceExamples";
+import { SourceReleasePage } from "./SourceRelease";
 const icons: Record<string, React.ReactNode> = {
   deploy: <ApartmentOutlined />,
   manage: <FileTextOutlined />,
@@ -199,6 +202,19 @@ export default function App() {
             path="/releaseList"
             element={<Navigate to="/release/list" replace />}
           />
+          <Route path="/featureDetails" element={<ImportedFeaturePage />} />
+          <Route path="/layerScene/detail" element={<SourceGraphPage />} />
+          <Route
+            path="/layerScene/template/detail"
+            element={<SourceGraphPage kind="template" />}
+          />
+          {["detail", "experiment-detail", "gray-detail"].map((path) => (
+            <Route
+              key={path}
+              path={"/release/" + path}
+              element={<SourceReleasePage />}
+            />
+          ))}
           <Route path="/ruleDetails" element={<RuleDetail />} />
           <Route
             path="/help"

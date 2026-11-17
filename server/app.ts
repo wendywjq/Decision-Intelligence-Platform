@@ -113,6 +113,116 @@ export function createApp(db: Database.Database) {
         .json({ error: "未找到该主体的累计值，示例主体为 demo" });
     res.json(row);
   });
+  app.put("/api/source/config/:id", (req, res) => {
+    const row = db
+      .prepare("SELECT data FROM source_configs WHERE id=?")
+      .get(req.params.id) as any;
+    if (!row) return res.status(404).json({ error: "配置不存在" });
+    const old = JSON.parse(row.data);
+    const next = {
+      ...old,
+      status: req.body.status ?? old.status,
+      decision: req.body.decision ?? old.decision,
+      priority: req.body.priority ?? old.priority,
+    };
+    db.prepare("UPDATE source_configs SET data=? WHERE id=?").run(
+      JSON.stringify(next),
+      req.params.id,
+    );
+    res.json(next);
+  });
+  app.get("/api/source/risk-tags", (_req, res) => {
+    const rows = db
+      .prepare("SELECT data FROM source_archives WHERE kind='tag'")
+      .all() as any[];
+    res.json({ items: rows.map((r) => JSON.parse(r.data)) });
+  });
+  app.get("/api/source/features/:id/dependencies", (req, res) => {
+    const row = db
+      .prepare("SELECT data FROM source_archives WHERE kind='feature' AND id=?")
+      .get(Number(req.params.id)) as any;
+    if (!row) return res.status(404).json({ error: "特征不存在" });
+    const f = JSON.parse(row.data).detail;
+    let names = f.param_list || f.paramList || "";
+    names = Array.isArray(names) ? names : String(names).split(",");
+    try {
+      const p = JSON.parse(f.parsed_exp_info || f.parsedExpInfo || "{}");
+      names.push(...(p.dependentEleNames || []));
+    } catch {}
+    const rows = db
+      .prepare("SELECT data FROM entities WHERE module='featureService'")
+      .all() as any[];
+    res.json({
+      items: rows
+        .map((r) => JSON.parse(r.data))
+        .filter((r) => names.includes(r.enName)),
+    });
+  });
+  app.get("/api/source/report", (_req, res) => {
+    const row = db
+      .prepare("SELECT value FROM settings WHERE key=?")
+      .get("source-import-report") as any;
+    res.json(row ? JSON.parse(row.value) : { counts: {} });
+  });
+  app.get("/api/source/archive/:kind/:id", (req, res) => {
+    const row = db
+      .prepare(
+        "SELECT data FROM source_archives WHERE kind=? AND id=? ORDER BY version DESC LIMIT 1",
+      )
+      .get(req.params.kind, Number(req.params.id)) as any;
+    if (!row) return res.status(404).json({ error: "尚未导入该来源对象" });
+    res.json(JSON.parse(row.data));
+  });
+  app.get("/api/source/configs/:module/:id", (req, res) => {
+    const rows = db
+      .prepare(
+        "SELECT data FROM source_configs WHERE scene_module=? AND scene_id=?",
+      )
+      .all(req.params.module, Number(req.params.id)) as { data: string }[];
+    res.json({
+      items: rows.map((x) => {
+        const c = JSON.parse(x.data);
+        return {
+          ...c,
+          rule: (() => {
+            const r = get("rulePage", c.ruleId);
+            return r
+              ? { id: r.id, name: r.name, enName: r.enName, status: r.status }
+              : undefined;
+          })(),
+          ruleGroupName: c.ruleGroupName || get("rulesGroup", c.groupId)?.name,
+          decision:
+            c.decision && !/^\d+$/.test(c.decision)
+              ? c.decision
+              : get("decisionList", c.decisionId)?.name || c.decision,
+        };
+      }),
+    });
+  });
+  app.get("/api/source/rules/:id/features", (req, res) => {
+    const refs = db
+      .prepare("SELECT * FROM source_feature_refs WHERE rule_id=?")
+      .all(Number(req.params.id)) as any[];
+    res.json({
+      items: refs
+        .map((x) => get("featureService", x.feature_id))
+        .filter(Boolean),
+    });
+  });
+  app.get("/api/source/rules/:id/references", (req, res) => {
+    const refs = db
+      .prepare(
+        "SELECT id,scene_module,scene_id,node_id,group_id,data FROM source_configs WHERE rule_id=?",
+      )
+      .all(Number(req.params.id)) as any[];
+    res.json({
+      items: refs.map((r) => ({
+        ...r,
+        name: get(r.scene_module, r.scene_id)?.name,
+        conf: JSON.parse(r.data),
+      })),
+    });
+  });
   app.get("/api/health", (_, res) =>
     res.json({ ok: true, database: "sqlite" }),
   );
@@ -145,6 +255,19 @@ export function createApp(db: Database.Database) {
               "SELECT * FROM scene_rules WHERE scene_module=? AND scene_id=?",
             )
             .all(m, r.id) as any[];
+          if (r.sourceImported) {
+            const source = db
+              .prepare(
+                "SELECT data FROM source_configs WHERE scene_module=? AND scene_id=?",
+              )
+              .all(m, r.id) as { data: string }[];
+            bindings.push(
+              ...source.map(({ data }) => {
+                const c = JSON.parse(data);
+                return { ...c, rule_id: c.ruleId };
+              }),
+            );
+          }
           return bindings.some((b) =>
             k === "ruleId"
               ? `${b.rule_id} ${get("rulePage", b.rule_id)?.name || ""}`.includes(
@@ -157,7 +280,7 @@ export function createApp(db: Database.Database) {
       }
       rows = rows.filter((r) =>
         k === "q"
-          ? `${r.id} ${r.name} ${r.enName || ""}`
+          ? `${r.id} ${r.sourceId || ""} ${r.name} ${r.enName || ""}`
               .toLowerCase()
               .includes(String(v).toLowerCase())
           : String(
@@ -173,7 +296,9 @@ export function createApp(db: Database.Database) {
     const size = Math.max(1, Math.min(100, Number(req.query.pageSize) || 10));
     const page = Math.max(1, Number(req.query.page) || 1);
     res.json({
-      items: rows.slice((page - 1) * size, page * size),
+      items: rows
+        .slice((page - 1) * size, page * size)
+        .map(({ nodes, edges, sourceData, ...row }) => row),
       total,
       page,
       pageSize: size,
