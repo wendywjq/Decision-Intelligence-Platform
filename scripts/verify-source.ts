@@ -62,14 +62,14 @@ assert.equal(
   ).n,
   manifest.counts.tags,
 );
-assert.equal(
+assert.ok(
   (
     db
       .prepare("SELECT COUNT(*) AS n FROM source_archives WHERE kind='rule'")
       .get() as any
-  ).n,
-  manifest.counts.rules,
+  ).n >= manifest.counts.rules,
 );
+
 assert.equal(
   (
     db

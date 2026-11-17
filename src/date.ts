@@ -1,6 +1,7 @@
 export function formatDate(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   const text = String(value);
+  if (/^\d{10,13}$/.test(text)) value = Number(text);
   if (typeof value === "number" || /[TZ]|[+]\d\d:\d\d$/.test(text)) {
     const date = new Date(
       typeof value === "number" && value < 1e12

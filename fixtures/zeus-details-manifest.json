@@ -1,0 +1,87 @@
+{
+  "sha256": "571379241e20fbb705eb79f917ee6b9b8c93ccada89df739c4f6f9b2e20c6e6e",
+  "parts": [
+    {
+      "path": "fixtures/zeus-details/part-000.bin",
+      "size": 262144,
+      "sha256": "2b1af3bc240419e1260a752fdf9a922046d962a586431825af3962216a7918ff"
+    },
+    {
+      "path": "fixtures/zeus-details/part-001.bin",
+      "size": 262144,
+      "sha256": "280a81a7fc24647b86b332e5bd7835cff309964c44817a67650e2615591cff6b"
+    },
+    {
+      "path": "fixtures/zeus-details/part-002.bin",
+      "size": 262144,
+      "sha256": "d4ecdb2f1ea9b9ce391c72d901517188562b177b71f5ffa81c3c68cea07680b7"
+    },
+    {
+      "path": "fixtures/zeus-details/part-003.bin",
+      "size": 262144,
+      "sha256": "9ede54f767bd1e79681ceec92e8e37d7a2706d3b1588db47d5d1407d5f24965a"
+    },
+    {
+      "path": "fixtures/zeus-details/part-004.bin",
+      "size": 262144,
+      "sha256": "24fde589ce24dfd47232c797828a8dde94ccf983ed023036c26cc6c9708e4f89"
+    },
+    {
+      "path": "fixtures/zeus-details/part-005.bin",
+      "size": 262144,
+      "sha256": "b8279291c877a39aace56ea200cfd98bdd22a02be8407190d650e2f3809286a9"
+    },
+    {
+      "path": "fixtures/zeus-details/part-006.bin",
+      "size": 262144,
+      "sha256": "971197eeabc41fbd199ac5237168be29709bc41fad0b03cf93fb26423be52491"
+    },
+    {
+      "path": "fixtures/zeus-details/part-007.bin",
+      "size": 262144,
+      "sha256": "cfd0eb96dba99be3574b11e16d99e590941649bcc06ebcf63c410804202cdfde"
+    },
+    {
+      "path": "fixtures/zeus-details/part-008.bin",
+      "size": 262144,
+      "sha256": "53c19839ea7f94c58bb41b180a060d6a0c730b4ccecb5b99be802536568d966d"
+    },
+    {
+      "path": "fixtures/zeus-details/part-009.bin",
+      "size": 262144,
+      "sha256": "18781e4223e80df93fcc20ef14820c882b1906eec7971739dd510b8a32098571"
+    },
+    {
+      "path": "fixtures/zeus-details/part-010.bin",
+      "size": 262144,
+      "sha256": "8d3dd0bc52ffd698e8315e1d1d51c664fa3d28e178175c57baeb687fbaa6c09a"
+    },
+    {
+      "path": "fixtures/zeus-details/part-011.bin",
+      "size": 262144,
+      "sha256": "9092f971ef976aba698f19a648cf1089c140f27fb38d66d8030ba875edc34c8d"
+    },
+    {
+      "path": "fixtures/zeus-details/part-012.bin",
+      "size": 262144,
+      "sha256": "86d6180cc0632be286497db153f00b7bd4e6885ef9e752f6dada2134185feb86"
+    },
+    {
+      "path": "fixtures/zeus-details/part-013.bin",
+      "size": 262144,
+      "sha256": "e2e8f80a40b4c0bf9e97dab61457556c81ac64c36bbc90a34cab413a9289a31e"
+    },
+    {
+      "path": "fixtures/zeus-details/part-014.bin",
+      "size": 251781,
+      "sha256": "eb372e69e51700d27023014393f0859c7d8d17fd39e489068c34797d5115a7fb"
+    }
+  ],
+  "counts": {
+    "graphVersions": 75,
+    "dependencies": 471,
+    "fetchers": 405,
+    "rules": 75
+  },
+  "errors": []
+}

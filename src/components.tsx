@@ -186,6 +186,12 @@ export function useRemote<T>(path: string, deps: any[] = []) {
   const [version, setVersion] = useState(0);
   useEffect(() => {
     let current = true;
+    if (!path) {
+      setLoading(false);
+      setData(undefined);
+      setError("");
+      return;
+    }
     setLoading(true);
     api<T>(path)
       .then((d) => {

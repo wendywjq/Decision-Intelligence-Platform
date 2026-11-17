@@ -1,3 +1,4 @@
+import { FeatureDetailContent, RuleUsage } from "./SourceSecondary";
 import { formatDate } from "./date";
 import { useMemo, useState } from "react";
 import {
@@ -152,7 +153,24 @@ export function Conditions({ conditions = [] }: { conditions?: any[] }) {
           dataIndex: "leftParamValue",
           render: (v) => <span className="source-value">{variable(v)}</span>,
         },
-        { title: "操作符", dataIndex: "operatorName", width: 140 },
+        {
+          title: "操作符",
+          dataIndex: "operatorName",
+          width: 140,
+          render: (v) =>
+            (
+              ({
+                greaterEqual: "大于等于 ≥",
+                lessEqual: "小于等于 ≤",
+                greater: "大于 >",
+                less: "小于 <",
+                equal: "等于",
+                notEqual: "不等于",
+                contain: "包含",
+                notContain: "不包含",
+              }) as any
+            )[v] || v,
+        },
         {
           title: "右变量",
           dataIndex: "rightParamValue",
@@ -169,9 +187,11 @@ export function Conditions({ conditions = [] }: { conditions?: any[] }) {
 export function SourceConfigTable({
   items,
   groupColumn = true,
+  readOnly = false,
 }: {
   items: any[];
   groupColumn?: boolean;
+  readOnly?: boolean;
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>();
@@ -229,7 +249,11 @@ export function SourceConfigTable({
             title: "规则/规则组",
             render: (_, r) => (
               <>
-                <Link to={"/ruleDetails?id=" + r.ruleId}>
+                <Link
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  to={"/ruleDetails?id=" + r.ruleId}
+                >
                   {r.ruleId}-{r.rule?.name || r.name || r.ruleName}
                 </Link>
                 <div className="secondary-name">
@@ -292,6 +316,7 @@ export function SourceConfigTable({
                 <Button
                   type="link"
                   size="small"
+                  disabled={readOnly}
                   onClick={() => {
                     setEdit(r);
                     form.setFieldsValue(r);
@@ -438,6 +463,7 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
   const usage = useRemote<{ items: any[] }>(
     "/source/rules/" + id + "/references",
   );
+  const metadata = useRemote<any>("/source/rules/" + id + "/metadata");
   const [display, setDisplay] = useState("交互式");
   const [edit, setEdit] = useState(false);
   const rule = data?.logic || data?.detail?.basicInfo?.rule;
@@ -489,7 +515,10 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
                       {
                         key: "mode",
                         label: "编辑模式",
-                        children: rule.editMode,
+                        children:
+                          ({ 7: "交互式", 8: "决策表", 9: "代码模式" } as any)[
+                            rule.editMode
+                          ] || rule.editMode,
                       },
                       {
                         key: "remark",
@@ -542,7 +571,16 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
                   />
                 </Section>
                 <Section title="标签">
-                  <ObjectDetails value={current?.tagList || {}} />
+                  <Space wrap>
+                    {(metadata.data?.tags || []).map((t: any) => (
+                      <Tag key={t.id} color={t.objType === 5 ? "red" : "blue"}>
+                        {t.name}
+                      </Tag>
+                    ))}
+                  </Space>
+                  {current?.tagList && (
+                    <RawData value={current.tagList} title="完整标签配置" />
+                  )}
                 </Section>
                 <Section title="添加话术">
                   <ObjectDetails value={current?.ruleKefu || {}} />
@@ -573,35 +611,8 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
           },
           {
             key: "usage",
-            label: `被引用情况（${usage.data?.items.length || 0}）`,
-            children: (
-              <Table<any>
-                rowKey="id"
-                dataSource={usage.data?.items || []}
-                columns={[
-                  { title: "来源类型", dataIndex: "scene_module" },
-                  {
-                    title: "场景/规则组",
-                    render: (_, r) => (
-                      <Link
-                        to={
-                          (r.scene_module === "graphTemplate"
-                            ? "/layerScene/template/detail"
-                            : "/" + r.scene_module) +
-                          "?id=" +
-                          r.scene_id
-                        }
-                      >
-                        {r.scene_id} {r.name}
-                      </Link>
-                    ),
-                  },
-                  { title: "节点", dataIndex: "node_id" },
-                  { title: "规则组", dataIndex: "group_id" },
-                  { title: "状态", render: (_, r) => r.conf.status },
-                ]}
-              />
-            ),
+            label: "被引用情况",
+            children: <RuleUsage id={id} items={usage.data?.items || []} />,
           },
         ]}
       />
@@ -651,63 +662,9 @@ export function ImportedFeaturePage() {
   );
 }
 export function ImportedFeature({ row }: { row: Row }) {
-  const { data, error } = useRemote<any>("/source/archive/feature/" + row.id);
-  const dep = useRemote<{ items: Row[] }>(
-    "/source/features/" + row.id + "/dependencies",
-  );
-  const navigate = useNavigate();
-  return (
-    <>
-      <PageHeader title={"特征详情 · " + row.name}>
-        <Button onClick={() => navigate("/featureService")}>返回列表</Button>
-        {data && <RawData value={data} />}
-      </PageHeader>
-      <SourceNotice />
-      {error && <Alert type="error" message={error} />}
-      <Tabs
-        items={[
-          {
-            key: "basic",
-            label: "基本信息",
-            children: (
-              <>
-                <ObjectDetails
-                  value={{
-                    ID: row.sourceId,
-                    中文名称: row.name,
-                    英文名称: row.enName,
-                    特征类型: row.type,
-                    数据类型: row.dataType,
-                    状态: row.status,
-                    负责人: row.owner,
-                  }}
-                />
-                <Section title="计算逻辑">
-                  <pre className="code-editor">
-                    {row.expression || "原始参数，无计算表达式"}
-                  </pre>
-                </Section>
-                <Section title="完整特征属性">
-                  <ObjectDetails value={data?.detail} />
-                </Section>
-                {data?.model && (
-                  <Section title="模型配置">
-                    <ObjectDetails value={data.model} />
-                  </Section>
-                )}
-              </>
-            ),
-          },
-          {
-            key: "deps",
-            label: "引用特征",
-            children: <FeatureList items={dep.data?.items || []} />,
-          },
-        ]}
-      />
-    </>
-  );
+  return <FeatureDetailContent row={row} />;
 }
+
 export function RiskTagExplorer() {
   const { data, loading } = useRemote<{ items: any[] }>("/source/risk-tags");
   const [selected, setSelected] = useState<number>();

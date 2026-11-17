@@ -1,3 +1,4 @@
+import { syncDetailFixtures } from "./source-details.ts";
 import Database from "better-sqlite3";
 import { initializeSourceSchema, syncSourceFixture } from "./source-import.ts";
 import { mkdirSync } from "node:fs";
@@ -296,5 +297,9 @@ export function openDatabase(
   initializeSourceSchema(db);
   if (path === (process.env.DATABASE_PATH || "data/zeus.sqlite"))
     syncSourceFixture(db);
+  syncDetailFixtures(
+    db,
+    path === (process.env.DATABASE_PATH || "data/zeus.sqlite"),
+  );
   return db;
 }

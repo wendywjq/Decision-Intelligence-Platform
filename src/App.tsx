@@ -1,3 +1,10 @@
+import { StrategyLogs, StrategyLogDetail } from "./StrategyLogs";
+import { FetcherPage } from "./SourceSecondary";
+import { useSearchParams } from "react-router-dom";
+function FetcherRoute() {
+  const [p] = useSearchParams();
+  return <FetcherPage id={Number(p.get("id"))} />;
+}
 import { useState } from "react";
 import {
   Routes,
@@ -197,6 +204,12 @@ export default function App() {
       </aside>
       <main className={collapsed ? "main main-collapsed" : "main"}>
         <Routes>
+          <Route path="/strategyCheckLog" element={<StrategyLogs />} />
+          <Route
+            path="/strategyCheckLog/detail"
+            element={<StrategyLogDetail />}
+          />
+          <Route path="/fetcher/edit" element={<FetcherRoute />} />
           <Route path="/" element={<Navigate to="/scene" replace />} />
           <Route
             path="/releaseList"

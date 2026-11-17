@@ -1,3 +1,5 @@
+import { GraphInfoEditor } from "./SourceSecondary";
+import { GraphVersionDrawer } from "./GraphVersions";
 import { formatDate } from "./date";
 import { useEffect, useState } from "react";
 import {
@@ -46,6 +48,8 @@ export function ModulePage({ module: m }: { module: Module }) {
   const nav = useNavigate();
   const { message } = App.useApp();
   const [params] = useSearchParams();
+  const [graphInfo, setGraphInfo] = useState<Row>();
+  const [graphVersion, setGraphVersion] = useState<Row>();
   const [releaseCreate, setReleaseCreate] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [tab, setTab] = useState(m.tabs?.[0]);
@@ -99,6 +103,10 @@ export function ModulePage({ module: m }: { module: Module }) {
           "?id=" +
           r.id,
       );
+      return;
+    }
+    if (r.sourceImported && m.key === "fetcher") {
+      nav("/fetcher/edit?id=" + r.id);
       return;
     }
     if (r.sourceImported && m.key === "featureService") {
@@ -288,6 +296,15 @@ export function ModulePage({ module: m }: { module: Module }) {
               </Popconfirm>
             )}
           </Space>
+        ) : r.sourceImported && m.kind === "graph" ? (
+          <Space direction="vertical" size={2}>
+            <Button type="link" onClick={() => setGraphInfo(r)}>
+              修改信息
+            </Button>
+            <Button type="link" onClick={() => setGraphVersion(r)}>
+              版本管理
+            </Button>
+          </Space>
         ) : (
           <Space size={12}>
             <button
@@ -335,7 +352,26 @@ export function ModulePage({ module: m }: { module: Module }) {
       : data?.items || [];
   return (
     <>
+      {graphInfo && (
+        <GraphInfoEditor
+          row={graphInfo}
+          open={!!graphInfo}
+          onClose={() => setGraphInfo(undefined)}
+          onSaved={reload}
+        />
+      )}
+      {graphVersion && (
+        <GraphVersionDrawer
+          id={graphVersion.id}
+          kind={graphVersion.sourceKind === "template" ? "template" : "graph"}
+          open={!!graphVersion}
+          onClose={() => setGraphVersion(undefined)}
+        />
+      )}
       <PageHeader title={m.title}>
+        {m.key === "featureService" && (
+          <Button onClick={() => nav("/fetcher")}>数据接口</Button>
+        )}
         {m.key === "release/list" && (
           <>
             <Button onClick={() => setFilters({ status: "已完成" })}>

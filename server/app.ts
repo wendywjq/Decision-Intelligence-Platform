@@ -1,3 +1,4 @@
+import { registerDetailRoutes } from "./source-details.ts";
 import express from "express";
 import type Database from "better-sqlite3";
 import { moduleMap } from "../src/catalog.ts";
@@ -42,6 +43,7 @@ export function createApp(db: Database.Database) {
       audit(m, id, next.name, action);
       return next;
     })();
+  registerDetailRoutes(app, db);
   app.get("/api/references/rule/:id", (req, res) =>
     res.json({
       items: (
@@ -218,7 +220,10 @@ export function createApp(db: Database.Database) {
     res.json({
       items: refs.map((r) => ({
         ...r,
-        name: get(r.scene_module, r.scene_id)?.name,
+        name: get(
+          r.scene_module === "graphTemplate" ? "layerScene" : r.scene_module,
+          r.scene_id,
+        )?.name,
         conf: JSON.parse(r.data),
       })),
     });

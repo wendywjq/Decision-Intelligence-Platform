@@ -1,3 +1,6 @@
+import { GraphVersions } from "./GraphVersions";
+import { GraphInfoEditor } from "./SourceSecondary";
+import { formatDate } from "./date";
 import { useEffect, useMemo, useState } from "react";
 import {
   ReactFlow,
@@ -146,22 +149,58 @@ export function SourceGraphPage({ kind = "graph" }: { kind?: string }) {
   const id = Number(params.get("id"));
   const { data, error } = useRemote<any>("/source/archive/" + kind + "/" + id);
   const navigate = useNavigate();
+  const [editInfo, setEditInfo] = useState(false);
+  const rowRemote = useRemote<any>("/entities/layerScene/" + id);
+  const version = params.get("version");
+  const historical = useRemote<any>(
+    version && kind === "graph"
+      ? "/source/graph/" + id + "/version/" + version
+      : "",
+  );
   return (
     <>
       <PageHeader
         title={
           data?.graph
-            ? `[详情] ${id} - ${data.graph.name} V${data.graph.version}`
+            ? `[详情] ${id} - ${rowRemote.data?.name || data.graph.name} V${version || data.graph.version}`
             : "分层场景详情"
         }
       >
+        <Button onClick={() => setEditInfo(true)}>修改信息</Button>
         <Button onClick={() => navigate("/layerScene")}>返回分层场景</Button>
         {data && <RawData value={data} />}
       </PageHeader>
+      {version && historical.error && (
+        <Alert type="warning" message={historical.error} />
+      )}
+      {rowRemote.data && (
+        <GraphInfoEditor
+          row={rowRemote.data}
+          open={editInfo}
+          onClose={() => setEditInfo(false)}
+          onSaved={rowRemote.reload}
+        />
+      )}
       {error ? (
         <Alert type="error" message={error} />
+      ) : version && historical.error ? null : version && historical.loading ? (
+        <Spin />
       ) : data ? (
-        <SourceGraphView id={id} archive={data} kind={kind} />
+        <SourceGraphView
+          key={version || "active"}
+          id={id}
+          archive={
+            version && historical.data
+              ? {
+                  ...data,
+                  graph: historical.data,
+                  decisionTree: historical.data.decisionTreeArchive,
+                }
+              : data
+          }
+          kind={kind}
+          historical={!!version}
+        />
       ) : (
         <Spin />
       )}
@@ -172,10 +211,12 @@ export function SourceGraphView({
   id,
   archive,
   kind = "graph",
+  historical = false,
 }: {
   id: number;
   archive: any;
   kind?: string;
+  historical?: boolean;
 }) {
   const { message } = App.useApp();
   const [view, setView] = useState("识别树");
@@ -197,8 +238,31 @@ export function SourceGraphView({
     setEdges(converted.edges);
   }, [converted, setNodes, setEdges]);
   const templates = converted.nodes.filter((n) => n.data.isTemplate);
+  const historicConfs = converted.nodes.flatMap((n: any) =>
+    [
+      ...(n.data.source.data?.ruleConfs || []),
+      ...(n.data.source.data?.ruleGroups || []).flatMap((g: any) =>
+        (g.ruleConfs || g.confs || []).map((c: any) => ({
+          ...c,
+          groupId: g.id || g.ruleGroupId,
+          ruleGroupName: g.ruleGroupName,
+        })),
+      ),
+    ].map((c: any, i: number) => ({
+      ...c,
+      id: n.id + ":" + i,
+      nodeId: n.id,
+      ruleId: c.ruleId,
+      name: c.ruleAlias || c.ruleName,
+      sourceConfId: c.confId,
+      sourceStatus: c.status,
+      status:
+        ({ 64: "生效", 32: "标记", 0: "离线" } as any)[c.status] ||
+        String(c.status),
+    })),
+  );
   const nodeConfs = (path: string) =>
-    (config?.items || []).filter(
+    (historical ? historicConfs : config?.items || []).filter(
       (c) => c.nodeId === path || c.nodeId?.startsWith(path + "-"),
     );
   async function saveLayout() {
@@ -238,7 +302,7 @@ export function SourceGraphView({
           <Tabs
             activeKey={view}
             onChange={setView}
-            items={["识别树", "决策树", "策略模板", "版本信息"].map(
+            items={["识别树", "决策树", "策略模板", "版本管理"].map(
               (label) => ({ key: label, label }),
             )}
           />
@@ -280,24 +344,18 @@ export function SourceGraphView({
             },
           ]}
         />
-      ) : view === "版本信息" ? (
-        <Table<any>
-          rowKey="version"
-          dataSource={archive.versions || []}
-          columns={[
-            { title: "版本", dataIndex: "version" },
-            {
-              title: "状态",
-              dataIndex: "status",
-              render: (v) => (v === 64 ? "生效" : "非生效"),
-            },
-            { title: "升级说明", dataIndex: "upgradeDesc" },
-            { title: "修改人", dataIndex: "modifier" },
-            { title: "完整信息", render: (_, r) => <RawData value={r} /> },
-          ]}
+      ) : view === "版本管理" ? (
+        <GraphVersions
+          id={id}
+          kind={kind}
+          current={archive.graph.version}
+          versions={archive.versions || []}
         />
       ) : table ? (
-        <SourceConfigTable items={config?.items || []} />
+        <SourceConfigTable
+          readOnly={historical}
+          items={historical ? historicConfs : config?.items || []}
+        />
       ) : !graph ? (
         <Empty description="来源对象没有决策树" />
       ) : (
@@ -336,7 +394,12 @@ export function SourceGraphView({
               {
                 key: "rules",
                 label: `规则与规则组（${nodeConfs(selected.id).length}）`,
-                children: <SourceConfigTable items={nodeConfs(selected.id)} />,
+                children: (
+                  <SourceConfigTable
+                    readOnly={historical}
+                    items={nodeConfs(selected.id)}
+                  />
+                ),
               },
               {
                 key: "router",
