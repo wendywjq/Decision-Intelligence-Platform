@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   App,
@@ -58,10 +58,10 @@ function RuleLinks({ items = [] }: { items?: any[] }) {
   );
 }
 export function StrategyLogs() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const [cv, setCv] = useState(params.get("cvId") || cvIds[0]),
-    [requestId, setRequestId] = useState(""),
-    [sceneId, setSceneId] = useState(""),
+    [requestId, setRequestId] = useState(params.get("requestId") || ""),
+    [sceneId, setSceneId] = useState(params.get("sceneId") || ""),
     [query, setQuery] = useState(params.get("cvId") || cvIds[0]),
     [mode, setMode] = useState("自定义列表"),
     [sql, setSql] = useState(false),
@@ -75,16 +75,72 @@ export function StrategyLogs() {
       "decisions",
       "action",
     ]),
-    [start, setStart] = useState(""),
-    [end, setEnd] = useState("");
-  const [filters, setFilters] = useState<any>({});
+    [start, setStart] = useState(params.get("start") || ""),
+    [end, setEnd] = useState(params.get("end") || "");
+  const [filters, setFilters] = useState<any>(() => ({
+    requestId: params.get("requestId") || "",
+    sceneId: params.get("sceneId") || "",
+    ...(params.get("start")
+      ? {
+          startTime: String(
+            Math.floor(new Date(params.get("start")!).getTime() / 1000),
+          ),
+        }
+      : {}),
+    ...(params.get("end")
+      ? {
+          endTime: String(
+            Math.floor(new Date(params.get("end")!).getTime() / 1000),
+          ),
+        }
+      : {}),
+  }));
+  useEffect(() => {
+    const cvId = params.get("cvId") || cvIds[0];
+    setCv(cvId);
+    setQuery(cvId);
+    setRequestId(params.get("requestId") || "");
+    setSceneId(params.get("sceneId") || "");
+    setStart(params.get("start") || "");
+    setEnd(params.get("end") || "");
+    setFilters({
+      requestId: params.get("requestId") || "",
+      sceneId: params.get("sceneId") || "",
+      ...(params.get("start")
+        ? {
+            startTime: String(
+              Math.floor(new Date(params.get("start")!).getTime() / 1000),
+            ),
+          }
+        : {}),
+      ...(params.get("end")
+        ? {
+            endTime: String(
+              Math.floor(new Date(params.get("end")!).getTime() / 1000),
+            ),
+          }
+        : {}),
+    });
+  }, [params]);
   const remote = useRemote<any>(
-    "/source/logs?" + new URLSearchParams({ cvId: query, ...filters }),
+    "/source/logs?" +
+      new URLSearchParams({
+        cvId: query,
+        ...filters,
+        ...(mode === "特征平铺" ? { flat: "1" } : {}),
+      }),
   );
   const nav = useNavigate();
   const { message } = App.useApp();
   const captured = remote.data?.queries?.[0]?.window;
   const run = () => {
+    setParams(
+      Object.fromEntries(
+        Object.entries({ cvId: cv, requestId, sceneId, start, end }).filter(
+          ([, v]) => v,
+        ),
+      ),
+    );
     setQuery(cv);
     setFilters({
       requestId,
@@ -170,7 +226,9 @@ export function StrategyLogs() {
           target="_blank"
           to={
             "/strategyCheckLog/detail?requestId=" +
-            encodeURIComponent(r.requestId)
+            encodeURIComponent(r.requestId) +
+            "&returnTo=" +
+            encodeURIComponent("/strategyCheckLog?" + params.toString())
           }
         >
           查看
@@ -340,7 +398,27 @@ export function StrategyLogs() {
                   columns[1],
                   { title: "cvId", dataIndex: "cvId" },
                   columns[2],
-                  columns[5],
+                  {
+                    key: "features",
+                    title: "特征值",
+                    width: 650,
+                    render: (_: any, r: any) => (
+                      <div style={{ maxHeight: 280, overflow: "auto" }}>
+                        {Object.entries(r.featureValues || {}).map(
+                          ([name, value]) => (
+                            <div key={name}>
+                              <b>{name}</b>：
+                              <span className="source-value">
+                                {typeof value === "string"
+                                  ? value
+                                  : JSON.stringify(value)}
+                              </span>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ),
+                  },
                   columns[6],
                 ]
               : columns.filter((c) => cols.includes(c.key))
@@ -669,7 +747,15 @@ export function StrategyLogDetail() {
   return (
     <>
       <PageHeader title="请求详情">
-        <Button onClick={() => nav("/strategyCheckLog?cvId=" + data.cvId)}>
+        <Button
+          onClick={() =>
+            nav(
+              params.get("returnTo")?.startsWith("/strategyCheckLog?")
+                ? params.get("returnTo")!
+                : "/strategyCheckLog?cvId=" + data.cvId,
+            )
+          }
+        >
           返回查询
         </Button>
         <RawData value={data} title="完整请求日志" />

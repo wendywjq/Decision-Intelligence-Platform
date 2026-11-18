@@ -55,6 +55,12 @@ test("detail routes preserve log identity, time filters and feature lineage with
         .total,
       1,
     );
+    const flat = await (
+      await fetch(base + "/source/logs?cvId=123&flat=1")
+    ).json();
+    assert.deepEqual(flat.items[0].featureValues, { x: null });
+    const compact = await (await fetch(base + "/source/logs?cvId=123")).json();
+    assert.equal(compact.items[0].featureValues, undefined);
     const log = await (await fetch(base + "/source/logs/request-a")).json();
     assert.equal(log.detail.paramContext.x, null);
     assert.equal(log.cvId, "123");

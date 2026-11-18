@@ -10,3 +10,5 @@ __pycache__/
 *.pyc
 
 fixtures/zeus-examples.json.gz
+
+artifacts/

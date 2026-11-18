@@ -388,7 +388,15 @@ export function FeatureDetailContent({ row }: { row: Row }) {
                 <Section title="输出参数映射">
                   <MappingTable values={l.dependency?.outputDependentConfig} />
                 </Section>
-                <Button onClick={() => nav("/fetcher/edit?id=" + l.fetcher.id)}>
+                <Button
+                  onClick={() =>
+                    window.open(
+                      "/#/fetcher/edit?id=" + l.fetcher.id,
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                >
                   接口详情
                 </Button>
               </>
@@ -679,7 +687,7 @@ export function GraphInfoEditor({
   const { message } = App.useApp();
   return (
     <Modal
-      title="修改信息"
+      title="修改场景"
       open={open}
       onCancel={onClose}
       destroyOnClose
@@ -691,7 +699,7 @@ export function GraphInfoEditor({
             ...values,
             owner: values.manager,
             description: values.remark,
-            attrs: { ...row.attrs, recallMode: values.recallMode },
+            attrs: row.attrs,
           });
           message.success("场景信息已保存");
           onSaved();
@@ -719,14 +727,6 @@ export function GraphInfoEditor({
         </Form.Item>
         <Form.Item name="remark" label="备注">
           <Input.TextArea rows={4} />
-        </Form.Item>
-        <Form.Item name="recallMode" label="召回模式">
-          <Select
-            options={[
-              { value: 0, label: "默认模式" },
-              { value: 1, label: "异步召回" },
-            ]}
-          />
         </Form.Item>
       </Form>
     </Modal>

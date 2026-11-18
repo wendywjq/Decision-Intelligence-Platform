@@ -193,6 +193,8 @@ export function useRemote<T>(path: string, deps: any[] = []) {
       return;
     }
     setLoading(true);
+    setData(undefined);
+    setError("");
     api<T>(path)
       .then((d) => {
         if (current) {

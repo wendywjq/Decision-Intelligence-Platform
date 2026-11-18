@@ -429,6 +429,16 @@ export function registerDetailRoutes(app: Express, db: Database.Database) {
         ...b,
         cvId: r.cv_id,
         hasDetail: !!d,
+        ...(req.query.flat === "1"
+          ? {
+              featureValues: {
+                ...d?.paramContext,
+                ...d?.factorContext,
+                ...d?.zeusSystemParams,
+                ...d?.extraContext,
+              },
+            }
+          : {}),
         takenEffectRuleList: d?.takenEffectRules || b.takenEffectRuleList,
         markedRuleList: d?.markedRules || b.markedRuleList,
         decisionList: decisions.length ? decisions : b.decisionList,

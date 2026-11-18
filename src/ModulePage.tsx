@@ -60,14 +60,16 @@ export function ModulePage({ module: m }: { module: Module }) {
   const [detail, setDetail] = useState<Row>();
   const [selected, setSelected] = useState<React.Key[]>([]);
   const [flat, setFlat] = useState(false);
+  const [searchMode, setSearchMode] = useState("模糊搜索");
   const [batchMode, setBatchMode] = useState(false);
   const [chart, setChart] = useState<Row>();
   useEffect(() => {
-    if (params.get("id")) setFilters({ q: params.get("id")! });
+    if (params.get("id")) setFilters({ id: params.get("id")! });
   }, [params]);
   const query = new URLSearchParams({
     page: String(page),
     pageSize: String(pageSize),
+    ...(searchMode === "精确搜索" ? { searchMode: "exact" } : {}),
     ...(m.tabs && m.key !== "scene" ? { view: tab || m.tabs[0] } : {}),
     ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
   });
@@ -310,7 +312,8 @@ export function ModulePage({ module: m }: { module: Module }) {
             <button
               className="text-link"
               onClick={() => {
-                if (m.kind === "audit") setDetail(r);
+                if (m.key === "rulesFuseList") nav("/rulesFuseAdd?id=" + r.id);
+                else if (m.kind === "audit") setDetail(r);
                 else {
                   setEdit(r);
                   setEditor(true);
@@ -387,6 +390,10 @@ export function ModulePage({ module: m }: { module: Module }) {
             type="primary"
             icon={<PlusSquareOutlined />}
             onClick={() => {
+              if (m.key === "rulesFuseList") {
+                nav("/rulesFuseAdd");
+                return;
+              }
               if (m.kind === "release") {
                 setReleaseCreate(true);
                 return;
@@ -456,7 +463,11 @@ export function ModulePage({ module: m }: { module: Module }) {
                 {m.key === "scene" && i === 0 ? (
                   <Space.Compact style={{ width: "100%" }}>
                     <Select
-                      defaultValue="模糊搜索"
+                      value={searchMode}
+                      onChange={(v) => {
+                        setSearchMode(v);
+                        setPage(1);
+                      }}
                       options={["模糊搜索", "精确搜索"].map((value) => ({
                         value,
                         label: value,

@@ -1,3 +1,4 @@
+import { FusePage } from "./FusePage";
 import { StrategyLogs, StrategyLogDetail } from "./StrategyLogs";
 import { FetcherPage } from "./SourceSecondary";
 import { useSearchParams } from "react-router-dom";
@@ -228,6 +229,7 @@ export default function App() {
               element={<SourceReleasePage />}
             />
           ))}
+          <Route path="/rulesFuseAdd" element={<FusePage />} />
           <Route path="/ruleDetails" element={<RuleDetail />} />
           <Route
             path="/help"

@@ -191,3 +191,80 @@ test("scene filters use rule associations, not missing fields", async () => {
     true,
   );
 });
+
+test("ID deep links match exactly even when other IDs share the digits", async () => {
+  const created = await request("/entities/rulesGroup", "POST", {
+    name: "ID collision 1",
+    sourceId: "reference-3503",
+  });
+  const id = created.data.id;
+  const exact = await request("/entities/rulesGroup?id=" + id);
+  assert.equal(exact.data.total, 1);
+  assert.equal(exact.data.items[0].id, id);
+  const partial = await request(
+    "/entities/rulesGroup?id=" + String(id).slice(0, -1),
+  );
+  assert.ok(
+    partial.data.items.every(
+      (r: any) => String(r.id) === String(id).slice(0, -1),
+    ),
+  );
+  const unrelated = await request("/entities/rulesGroup?id=3503");
+  assert.ok(
+    unrelated.data.items.every(
+      (r: any) => r.id === 3503 || String(r.sourceId) === "3503",
+    ),
+  );
+});
+
+test("fuse form persists schedules, thresholds and notification settings", async () => {
+  const values = {
+    name: "测试熔断",
+    type: "分层场景熔断",
+    sceneId: "34214",
+    ruleId: "2443974",
+    decision: "187",
+    status: "启用",
+    action: "人工熔断",
+    times: [
+      { start: "2026-11-18T10:00", end: "2026-11-19T10:00", holiday: "否" },
+    ],
+    conditions: [
+      {
+        minutes: 1,
+        metric: "规则命中量",
+        fn: "绝对量",
+        operator: ">=",
+        threshold: 100,
+      },
+    ],
+    recipients: ["场景负责人"],
+  };
+  const saved = await request("/entities/rulesFuseList", "POST", values);
+  assert.equal(saved.status, 201);
+  const loaded = await request("/entities/rulesFuseList/" + saved.data.id);
+  assert.deepEqual(loaded.data.times, values.times);
+  assert.deepEqual(loaded.data.conditions, values.conditions);
+  assert.deepEqual(loaded.data.recipients, values.recipients);
+});
+
+test("precise search matches a whole ID or name while fuzzy search retains substring behavior", async () => {
+  const saved = await request("/entities/scene", "POST", {
+    name: "精确搜索回归示例",
+  });
+  const exact = await request(
+    "/entities/scene?q=" +
+      encodeURIComponent("精确搜索回归示例") +
+      "&searchMode=exact",
+  );
+  assert.equal(exact.data.total, 1);
+  assert.equal(exact.data.items[0].id, saved.data.id);
+  const short = await request(
+    "/entities/scene?q=" + encodeURIComponent("搜索回归") + "&searchMode=exact",
+  );
+  assert.equal(short.data.total, 0);
+  const fuzzy = await request(
+    "/entities/scene?q=" + encodeURIComponent("搜索回归"),
+  );
+  assert.equal(fuzzy.data.total, 1);
+});

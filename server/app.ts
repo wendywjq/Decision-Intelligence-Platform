@@ -249,7 +249,7 @@ export function createApp(db: Database.Database) {
         .all(m) as { data: string }[]
     ).map((x) => JSON.parse(x.data));
     for (const [k, v] of Object.entries(req.query)) {
-      if (!v || ["page", "pageSize"].includes(k)) continue;
+      if (!v || ["page", "pageSize", "searchMode"].includes(k)) continue;
       if (
         ["scene", "rulesGroup"].includes(m) &&
         ["ruleId", "decision", "status"].includes(k)
@@ -284,17 +284,25 @@ export function createApp(db: Database.Database) {
         continue;
       }
       rows = rows.filter((r) =>
-        k === "q"
-          ? `${r.id} ${r.sourceId || ""} ${r.name} ${r.enName || ""}`
-              .toLowerCase()
-              .includes(String(v).toLowerCase())
-          : String(
-              k === "view"
-                ? r.view || moduleMap[m].tabs?.[0] || ""
-                : r[k] || "",
-            )
-              .toLowerCase()
-              .includes(String(v).toLowerCase()),
+        k === "id"
+          ? String(r.id) === String(v) || String(r.sourceId) === String(v)
+          : k === "q" && req.query.searchMode === "exact"
+            ? [r.id, r.sourceId, r.name, r.enName].some(
+                (value) =>
+                  value != null &&
+                  String(value).toLowerCase() === String(v).toLowerCase(),
+              )
+            : k === "q"
+              ? `${r.id} ${r.sourceId || ""} ${r.name} ${r.enName || ""}`
+                  .toLowerCase()
+                  .includes(String(v).toLowerCase())
+              : String(
+                  k === "view"
+                    ? r.view || moduleMap[m].tabs?.[0] || ""
+                    : r[k] || "",
+                )
+                  .toLowerCase()
+                  .includes(String(v).toLowerCase()),
       );
     }
     const total = rows.length;

@@ -1,3 +1,4 @@
+import { FuseRelated } from "./FusePage";
 import { FeatureDetailContent, RuleUsage } from "./SourceSecondary";
 import { formatDate } from "./date";
 import { useMemo, useState } from "react";
@@ -188,14 +189,17 @@ export function SourceConfigTable({
   items,
   groupColumn = true,
   readOnly = false,
+  sceneId,
 }: {
   items: any[];
   groupColumn?: boolean;
   readOnly?: boolean;
+  sceneId?: number;
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>();
   const [edit, setEdit] = useState<any>();
+  const [fuse, setFuse] = useState<any>();
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const [local, setLocal] = useState<Record<string, any>>({});
@@ -211,6 +215,22 @@ export function SourceConfigTable({
     );
   return (
     <>
+      <Modal
+        title="熔断相关"
+        open={!!fuse}
+        onCancel={() => setFuse(undefined)}
+        footer={null}
+        width={650}
+        destroyOnHidden
+      >
+        {fuse && sceneId && (
+          <FuseRelated
+            sceneId={sceneId}
+            ruleId={fuse.ruleId}
+            decisionId={fuse.decisionId}
+          />
+        )}
+      </Modal>
       <div className="source-table-filters">
         <Input
           allowClear
@@ -259,6 +279,9 @@ export function SourceConfigTable({
                 <div className="secondary-name">
                   {r.rule?.enName || r.ruleName}
                 </div>
+                {r.tags?.map((tag: any) => (
+                  <Tag key={tag.id}>{tag.name}</Tag>
+                ))}
                 {groupColumn && r.groupId > 0 && (
                   <div className="secondary-name">
                     规则组：{r.groupId} {r.ruleGroupName}
@@ -299,6 +322,18 @@ export function SourceConfigTable({
             ),
           },
           { title: "优先级", dataIndex: "priority", width: 80 },
+          ...(sceneId
+            ? [
+                {
+                  title: "熔断配置",
+                  render: (_: any, r: any) => (
+                    <Button type="link" onClick={() => setFuse(r)}>
+                      熔断配置
+                    </Button>
+                  ),
+                },
+              ]
+            : []),
           {
             title: "最后修改",
             render: (_, r) => (

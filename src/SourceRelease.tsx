@@ -18,7 +18,7 @@ import {
   Tag,
 } from "antd";
 import { ArrowLeftOutlined, PlusOutlined } from "@ant-design/icons";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api, entityPath } from "./api";
 import { ObjectDetails, RawData, SourceNotice } from "./SourceExamples";
 import { PageHeader, Section, useRemote } from "./components";
@@ -100,8 +100,10 @@ export function ReleaseCreator({
         status: "待启动",
         progress: 0,
         type: "普通变更",
-        copiedFrom: copy?.id,
-        localChanges: copy?.changes || [],
+        copiedFrom: copy?.id || copy?.basic?.id,
+        localChanges: Array.isArray(copy?.changes)
+          ? copy.changes
+          : copy?.changes?.list || [],
         experimentConfig: { trafficSourceTypes: ["0"], rate: 10 },
         grayConfig: [
           { stage: 1, grayRate: 1, grayTime: 5 },
@@ -173,7 +175,7 @@ export function ReleaseCreator({
 export function SourceReleasePage() {
   const [params] = useSearchParams();
   const id = Number(params.get("id"));
-  const route = location.hash;
+  const route = useLocation().pathname;
   const tab = route.includes("experiment")
     ? "experiment"
     : route.includes("gray")
@@ -182,7 +184,7 @@ export function SourceReleasePage() {
   const { data, error } = useRemote<any>("/source/archive/release/" + id);
   const nav = useNavigate();
   const [create, setCreate] = useState(false);
-  const [active, setActive] = useState(tab);
+  const active = tab;
   const [stage, setStage] = useState(0);
   if (error) return <Alert type="error" message={error} />;
   if (!data) return <Spin />;
@@ -247,7 +249,14 @@ export function SourceReleasePage() {
       </Section>
       <Tabs
         activeKey={active}
-        onChange={setActive}
+        onChange={(key) =>
+          nav(
+            "/release/" +
+              (key === "changes" ? "detail" : key + "-detail") +
+              "?id=" +
+              id,
+          )
+        }
         items={[
           {
             key: "changes",

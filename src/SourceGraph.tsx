@@ -27,7 +27,7 @@ import {
   Tabs,
   Tag,
 } from "antd";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useRemote, PageHeader, Section } from "./components";
 import { api } from "./api";
 import {
@@ -152,6 +152,12 @@ export function SourceGraphPage({ kind = "graph" }: { kind?: string }) {
   const [editInfo, setEditInfo] = useState(false);
   const rowRemote = useRemote<any>("/entities/layerScene/" + id);
   const version = params.get("version");
+  const activeLocal = useRemote<any>(
+    "/settings/graph-active-" + kind + "-" + id,
+  );
+  useEffect(() => {
+    activeLocal.reload();
+  }, [version, id, kind]);
   const historical = useRemote<any>(
     version && kind === "graph"
       ? "/source/graph/" + id + "/version/" + version
@@ -162,7 +168,7 @@ export function SourceGraphPage({ kind = "graph" }: { kind?: string }) {
       <PageHeader
         title={
           data?.graph
-            ? `[详情] ${id} - ${rowRemote.data?.name || data.graph.name} V${version || data.graph.version}`
+            ? `[详情] ${id} - ${rowRemote.data?.name || data.graph.name} V${version || activeLocal.data?.version || data.graph.version}`
             : "分层场景详情"
         }
       >
@@ -181,7 +187,14 @@ export function SourceGraphPage({ kind = "graph" }: { kind?: string }) {
           onSaved={rowRemote.reload}
         />
       )}
-      {error ? (
+      {version &&
+      kind === "template" &&
+      String(version) !== String(data?.graph?.version) ? (
+        <Alert
+          type="warning"
+          message="此模板历史版本未收录完整画布，不能显示当前画布代替历史版本。"
+        />
+      ) : error ? (
         <Alert type="error" message={error} />
       ) : version && historical.error ? null : version && historical.loading ? (
         <Spin />
@@ -196,10 +209,16 @@ export function SourceGraphPage({ kind = "graph" }: { kind?: string }) {
                   graph: historical.data,
                   decisionTree: historical.data.decisionTreeArchive,
                 }
-              : data
+              : activeLocal.data?.graph
+                ? {
+                    ...data,
+                    graph: activeLocal.data.graph,
+                    decisionTree: activeLocal.data.graph.decisionTreeArchive,
+                  }
+                : data
           }
           kind={kind}
-          historical={!!version}
+          historical={!!version || !!activeLocal.data?.graph}
         />
       ) : (
         <Spin />
@@ -255,6 +274,7 @@ export function SourceGraphView({
       ruleId: c.ruleId,
       name: c.ruleAlias || c.ruleName,
       sourceConfId: c.confId,
+      updatedAt: c.modTime || c.modtime,
       sourceStatus: c.status,
       status:
         ({ 64: "生效", 32: "标记", 0: "离线" } as any)[c.status] ||
@@ -389,15 +409,69 @@ export function SourceGraphView({
         extra={selected && <RawData value={selected.data.source} />}
       >
         {selected && (
+          <Section title="基本信息">
+            <p>名称：{selected.data.label}</p>
+            <p>备注：{selected.data.source.data?.remark || "—"}</p>
+          </Section>
+        )}
+        {selected && (
           <Tabs
             items={[
               {
                 key: "rules",
-                label: `规则与规则组（${nodeConfs(selected.id).length}）`,
+                label: `规则（${nodeConfs(selected.id).filter((c) => !c.groupId).length}条）`,
                 children: (
                   <SourceConfigTable
+                    sceneId={id}
                     readOnly={historical}
-                    items={nodeConfs(selected.id)}
+                    items={nodeConfs(selected.id).filter((c) => !c.groupId)}
+                  />
+                ),
+              },
+              {
+                key: "groups",
+                label: `规则组（${
+                  new Set(
+                    nodeConfs(selected.id)
+                      .filter((c) => c.groupId)
+                      .map((c) => c.groupId),
+                  ).size
+                }条）`,
+                children: (
+                  <Table<any>
+                    rowKey="id"
+                    dataSource={Array.from(
+                      new Set(
+                        nodeConfs(selected.id)
+                          .filter((c) => c.groupId)
+                          .map((c) => c.groupId),
+                      ),
+                    ).map((groupId) => ({
+                      id: groupId,
+                      items: nodeConfs(selected.id).filter(
+                        (c) => c.groupId === groupId,
+                      ),
+                    }))}
+                    columns={[
+                      {
+                        title: "规则组",
+                        render: (_, r) => (
+                          <Link target="_blank" to={"/rulesGroup?id=" + r.id}>
+                            {r.id} {r.items[0]?.ruleGroupName}
+                          </Link>
+                        ),
+                      },
+                      { title: "规则数", render: (_, r) => r.items.length },
+                    ]}
+                    expandable={{
+                      expandedRowRender: (r) => (
+                        <SourceConfigTable
+                          sceneId={id}
+                          readOnly={historical}
+                          items={r.items}
+                        />
+                      ),
+                    }}
                   />
                 ),
               },
