@@ -499,13 +499,19 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
     "/source/rules/" + id + "/references",
   );
   const metadata = useRemote<any>("/source/rules/" + id + "/metadata");
-  const [display, setDisplay] = useState("交互式");
+  const [displayChoice, setDisplay] = useState<string>();
   const [edit, setEdit] = useState(false);
   const rule = data?.logic || data?.detail?.basicInfo?.rule;
   const detail = data?.detail;
   const current = detail?.basicInfo;
   const conditions =
     rule?.ruleConditions || current?.rule?.ruleConditions || [];
+  const hasConditions = Array.isArray(conditions)
+    ? conditions.length > 0
+    : typeof conditions === "string" &&
+      conditions.trim() !== "[]" &&
+      conditions.trim() !== "";
+  const display = displayChoice || (hasConditions ? "交互式" : "表达式");
   if (error) return <Alert type="error" message={error} />;
   if (!rule) return <Spin />;
   return (

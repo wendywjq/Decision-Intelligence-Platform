@@ -94,3 +94,18 @@ test("rule dependency extraction excludes metadata keys and constant strings", (
     "upstream",
   ]);
 });
+
+test("RPC lineage uses mapped input features and excludes fields marked as constants", async () => {
+  const { featureDependencyNames } = await import("../server/feature-refs.ts");
+  const names = featureDependencyNames(
+    { paramList: "declared_input", expression: '{"dependencyId":9}' },
+    {
+      inputDependentConfig: JSON.stringify({
+        uid: "upstream_user_id",
+        category: "model_score",
+        constantFields: "category",
+      }),
+    },
+  );
+  assert.deepEqual([...names].sort(), ["declared_input", "upstream_user_id"]);
+});

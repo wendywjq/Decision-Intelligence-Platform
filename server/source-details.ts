@@ -1,3 +1,7 @@
+import {
+  expressionFeatureNames,
+  featureDependencyNames,
+} from "./feature-refs.ts";
 import type Database from "better-sqlite3";
 import type { Express } from "express";
 import { existsSync, readFileSync } from "node:fs";
@@ -5,9 +9,13 @@ import { gunzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 export function referencedFeatureNames(logic: any) {
   const tokens = new Set<string>();
-  for (const key of ["factorNameList", "paramNameList"])
-    for (const name of logic[key] || [])
-      tokens.add(typeof name === "string" ? name : name.name);
+  for (const key of ["factorNameList", "paramNameList"]) {
+    const values =
+      typeof logic[key] === "string" ? logic[key].split(",") : logic[key] || [];
+    for (const name of values)
+      if (typeof name === "string" ? name.trim() : name?.name)
+        tokens.add(typeof name === "string" ? name.trim() : name.name);
+  }
   try {
     for (const name of JSON.parse(logic.parsedExpInfo || "{}")
       .dependentEleNames || [])
@@ -38,6 +46,10 @@ export function referencedFeatureNames(logic: any) {
         } catch {}
   } catch {}
 
+  for (const name of expressionFeatureNames(
+    logic.originExpression || logic.expression,
+  ))
+    tokens.add(name);
   return tokens;
 }
 export function syncDetailFixtures(db: Database.Database, loadFixtures = true) {
@@ -217,6 +229,29 @@ export function registerDetailRoutes(app: Express, db: Database.Database) {
     const tags = new Map();
     for (const c of configs)
       for (const t of JSON.parse(c.data).tags || []) tags.set(t.id, t);
+    const archive = db
+      .prepare(
+        "SELECT data FROM source_archives WHERE kind='rule' AND id=? AND version=''",
+      )
+      .get(Number(req.params.id)) as any;
+    const catalog = archive ? JSON.parse(archive.data).catalogInfo : undefined;
+    if (catalog) {
+      tags.clear();
+      for (const [field, details, type] of [
+        ["riskTagInfo", "riskTagDetail", 5],
+        ["factTagInfo", "factTagDetail", 6],
+        ["tagInfo", "tagDetail", undefined],
+        ["typeTagInfo", "typeTagDetail", undefined],
+        ["customTagInfo", "customTagDetail", undefined],
+      ] as const)
+        for (const [id, name] of Object.entries(catalog[field] || {}))
+          tags.set(id, {
+            id: Number(id),
+            name,
+            objType: type,
+            ...catalog[details]?.[id],
+          });
+    }
     res.json({ tags: [...tags.values()] });
   });
   app.get("/api/source/detail-rule/:id", (req, res) => {
@@ -257,33 +292,37 @@ export function registerDetailRoutes(app: Express, db: Database.Database) {
     const rows = entities("featureService");
     const byName = new Map(rows.map((r) => [r.enName, r]));
     const deps = new Map<number, any[]>();
-    for (const r of rows) {
-      const text = String(r.expression || "") + " " + String(r.paramList || "");
-      const names = new Set(text.match(/[A-Za-z_][\w]*/g) || []);
+    const rpcConfigs = new Map(
+      (
+        db
+          .prepare(
+            "SELECT id,data FROM source_detail_objects WHERE kind='dependency'",
+          )
+          .all() as any[]
+      ).map((d) => [String(d.id), JSON.parse(d.data)]),
+    );
+    for (const r of rows)
       deps.set(
         r.id,
-        [...names].map((n) => byName.get(n)).filter((x) => x && x.id !== r.id),
+        [...featureDependencyNames(r)]
+          .map((name) => byName.get(name))
+          .filter((f) => f && f.id !== r.id),
       );
-    }
-    // Raw param lists and parsed dependencies are more complete than presentation fields.
-    for (const a of db
+    for (const archive of db
       .prepare("SELECT id,data FROM source_archives WHERE kind='feature'")
       .all() as any[]) {
-      const f = JSON.parse(a.data).detail || {};
-      const names = new Set(
-        (
-          JSON.stringify([
-            f.param_list,
-            f.paramList,
-            f.parsed_exp_info,
-            f.parsedExpInfo,
-            f.expression,
-          ]) || ""
-        ).match(/[A-Za-z_][\w]*/g) || [],
-      );
+      const detail = JSON.parse(archive.data).detail || {};
+      let dependency: any;
+      try {
+        dependency = rpcConfigs.get(
+          String(JSON.parse(detail.expression || "{}").dependencyId),
+        );
+      } catch {}
       deps.set(
-        a.id,
-        [...names].map((n) => byName.get(n)).filter((x) => x && x.id !== a.id),
+        archive.id,
+        [...featureDependencyNames(detail, dependency)]
+          .map((name) => byName.get(name))
+          .filter((f) => f && f.id !== archive.id),
       );
     }
     return (featureIndex = { rows, byName, deps });

@@ -20,12 +20,23 @@ def get(path, params, key=None, refresh=False, attempt=0):
   if delay>0:time.sleep(delay)
   clock.seek(0);clock.truncate();clock.write(str(time.time()));clock.flush()
   fcntl.flock(clock,fcntl.LOCK_UN)
- r=subprocess.run(['bash',str(AUTH),'prod-cn',url,'--max-time','90','-H','M-APPKEY: fe_zeus','-H','zeus: true'],capture_output=True,text=True,timeout=100)
- if r.returncode:raise RuntimeError(r.stderr[:300])
- try:data=json.loads(r.stdout)
- except Exception:raise RuntimeError('Invalid JSON response '+path+' '+r.stdout[:160])
- if data.get('code')!=0 and 'rate limit' in str(data.get('desc','')):
+ r=subprocess.run(['bash',str(AUTH),'prod-cn',url,'--max-time','90','-H','M-APPKEY: fe_zeus','-H','zeus: true','-w','\nZEUS_HTTP_STATUS:%{http_code}'],capture_output=True,text=True,timeout=100)
+ body,_,status=r.stdout.rpartition('\nZEUS_HTTP_STATUS:')
+ if r.returncode:
+  if r.returncode in [5,6,7,18,28,35,52,55,56] and attempt<3:
+   print("Network interruption, curl exit",r.returncode,"cooldown",30*(attempt+1),"seconds",file=sys.stderr,flush=True)
+   time.sleep(30*(attempt+1));return get(path,params,key,refresh,attempt+1)
+  raise RuntimeError('Network request failed: curl exit '+str(r.returncode))
+ if status=='429' or status in ['502','503','504']:
+  if attempt>=3:raise RuntimeError('HTTP '+status+' after bounded cooldowns; resume later')
+  print('HTTP',status,'cooldown',60*(attempt+1),'seconds',file=sys.stderr,flush=True)
+  time.sleep(60*(attempt+1));return get(path,params,key,refresh,attempt+1)
+ if status in ['301','302','401','403']:raise RuntimeError('HTTP '+status+'; authentication/authorization required, stopped')
+ try:data=json.loads(body)
+ except Exception:raise RuntimeError('Invalid JSON response '+path+' '+body[:160])
+ if data.get('code')!=0 and any(term in str(data.get('desc','')).lower() for term in ['rate limit','too many requests','频繁','限流']):
   if attempt>=5:raise RuntimeError('Rate limited after five 60-second cooldowns; resume from cache later')
+  print("Rate limit response; cooldown 60 seconds",file=sys.stderr,flush=True)
   time.sleep(60)
   return get(path,params,key,refresh,attempt+1)
  if data.get('code')!=0:raise RuntimeError(str({k:data.get(k) for k in ['code','desc','message']}))

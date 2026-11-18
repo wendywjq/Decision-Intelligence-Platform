@@ -1,3 +1,4 @@
+import { expressionFeatureNames } from "./feature-refs.ts";
 import type Database from "better-sqlite3";
 import { existsSync, readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
@@ -24,6 +25,7 @@ export function importSourceSnapshot(
   db: Database.Database,
   snapshot: any,
   digest = "manual",
+  options: { additive?: boolean; preserveLocal?: boolean } = {},
 ) {
   initializeSourceSchema(db);
   const entity = db.prepare(
@@ -39,9 +41,42 @@ export function importSourceSnapshot(
     "INSERT OR IGNORE INTO source_feature_refs VALUES(?,?,?,?,?)",
   );
   const captured = snapshot.capturedAt;
+  const protectionRecords = options.preserveLocal
+    ? (db
+        .prepare(
+          "SELECT module,entity_id,MAX(updated_at) AS updated_at FROM audit WHERE action IN ('修改','删除') GROUP BY module,entity_id",
+        )
+        .all() as any[])
+    : [];
+  const protectionDates = new Map<string, number>(
+    protectionRecords.map((r) => [
+      r.module + ":" + r.entity_id,
+      Date.parse(
+        String(r.updated_at).replace(" ", "T") +
+          (String(r.updated_at).endsWith("Z") ? "" : "Z"),
+      ),
+    ]),
+  );
+  const protectedRows = new Set(protectionDates.keys());
+  // A locally deleted demo ID can later be allocated to a new source object.
+  // An edit made before that source object existed must not suppress its import.
+  const allowNewSource = (module: string, id: number, added: any) => {
+    const stamp = Number(added),
+      audit = protectionDates.get(module + ":" + id);
+    if (
+      Number.isFinite(stamp) &&
+      stamp > 0 &&
+      audit !== undefined &&
+      (stamp < 1e12 ? stamp * 1000 : stamp) > audit
+    )
+      protectedRows.delete(module + ":" + id);
+  };
+  const protectedRules: number[] = [];
+
   const iso = (v: any) =>
     typeof v === "number" ? new Date(v < 1e12 ? v * 1000 : v).toISOString() : v;
   const put = (module: string, id: number, data: any) =>
+    !protectedRows.has(module + ":" + id) &&
     entity.run(
       module,
       id,
@@ -105,8 +140,10 @@ export function importSourceSnapshot(
   };
   db.transaction(() => {
     // Replace only previous captured examples; user-created demo rows remain intact.
-    db.prepare("DELETE FROM source_configs").run();
-    db.prepare("DELETE FROM source_feature_refs").run();
+    if (!options.additive) {
+      db.prepare("DELETE FROM source_configs").run();
+      db.prepare("DELETE FROM source_feature_refs").run();
+    }
     for (const entry of snapshot.scenes || []) {
       const s = entry.scene;
       put("scene", s.id, {
@@ -144,6 +181,24 @@ export function importSourceSnapshot(
     }
     const featureNames = new Map<string, any>();
     const featureIds = new Map<string, number>();
+    const featureEntityNames = new Map<number, string>();
+    if (options.additive)
+      for (const row of db
+        .prepare("SELECT data FROM entities WHERE module='featureService'")
+        .all() as any[]) {
+        const f = JSON.parse(row.data);
+        featureIds.set(
+          (f.sourceKind || "factor") + ":" + (f.sourceId || f.id),
+          f.id,
+        );
+        featureEntityNames.set(f.id, f.enName);
+        if (f.enName)
+          featureNames.set(f.enName, {
+            entityId: f.id,
+            id: f.sourceId || f.id,
+            kind: f.sourceKind || "factor",
+          });
+      }
     for (const f of [
       ...(snapshot.features || []),
       ...(snapshot.missingFeatures || []),
@@ -151,11 +206,13 @@ export function importSourceSnapshot(
       const d = f.detail;
       const param = f.kind === "param";
       const id = param ? 1000000000 + Number(f.id) : Number(f.id);
+      allowNewSource("featureService", id, d.addtime);
       const name = d.name || f.reference?.value || "";
       featureNames.set(name, { ...f, entityId: id });
       for (const alias of f.referenceNames || [])
         featureNames.set(alias, { ...f, entityId: id });
       featureIds.set(f.kind + ":" + f.id, id);
+      featureEntityNames.set(id, name);
       put("featureService", id, {
         sourceId: f.id,
         sourceKind: f.kind,
@@ -169,11 +226,22 @@ export function importSourceSnapshot(
                 1: "衍生因子",
                 2: "累计因子",
                 3: "扩展因子",
+                4: "决策表因子",
+                5: "工具因子",
+                6: "离线引擎-个体因子",
+                7: "离线引擎-全局因子",
+                8: "内存名单-CEP",
+                9: "黑白模板因子",
+                11: "离线因子",
                 10: "模型因子",
               } as any
-            )[d.type] || "衍生因子",
+            )[d.type] || (d.type == null ? "衍生因子" : "类型 " + d.type),
         status:
-          f.available === false ? "来源不存在" : sourceStatus(d.status ?? 64),
+          f.available === false
+            ? f.availability === "not-in-catalog"
+              ? "来源未收录"
+              : "来源不存在"
+            : sourceStatus(d.status ?? 64),
         dataType:
           (
             {
@@ -196,9 +264,20 @@ export function importSourceSnapshot(
         createdAt: iso(d.addtime),
         view: "特征集市",
       });
-      raw("feature", id, f);
+      if (!protectedRows.has("featureService:" + id)) raw("feature", id, f);
     }
     for (const r of snapshot.rules || []) {
+      allowNewSource(
+        "rulePage",
+        r.id,
+        r.logic?.addtime || r.catalogInfo?.addtime,
+      );
+      if (protectedRows.has("rulePage:" + r.id)) {
+        protectedRules.push(r.id);
+        continue;
+      }
+      if (options.additive)
+        db.prepare("DELETE FROM source_feature_refs WHERE rule_id=?").run(r.id);
       const logic = r.logic || r.detail?.basicInfo?.rule || {};
       const refs = new Set<string>();
       for (const key of ["factorNameList", "paramNameList"]) {
@@ -242,6 +321,24 @@ export function importSourceSnapshot(
             scan(parsed);
           } catch {}
         }
+      for (const name of expressionFeatureNames(
+        logic.originExpression || logic.expression,
+      ))
+        if (featureNames.has(name)) refs.add(name);
+      let directFactorIds = logic.factorIdList || [];
+      if (typeof directFactorIds === "string")
+        directFactorIds = directFactorIds.split(",");
+      for (const sourceId of directFactorIds) {
+        const id = featureIds.get("factor:" + sourceId);
+        if (id !== undefined)
+          featureRef.run(
+            r.id,
+            id,
+            Number(sourceId),
+            "factor",
+            featureEntityNames.get(id),
+          );
+      }
       for (const name of refs) {
         const f = featureNames.get(name);
         if (f) featureRef.run(r.id, f.entityId, f.id, f.kind, name);
@@ -258,9 +355,55 @@ export function importSourceSnapshot(
         version: logic.versionId || r.detail?.basicInfo?.rule?.versionId,
         updatedAt: iso(logic.modtime),
         createdAt: iso(logic.addtime),
-        featureCount: [...refs].filter((n) => featureNames.has(n)).length,
+        featureCount: (
+          db
+            .prepare(
+              "SELECT COUNT(*) AS n FROM source_feature_refs WHERE rule_id=?",
+            )
+            .get(r.id) as any
+        ).n,
+        ...(r.catalogInfo
+          ? {
+              refCount: r.catalogInfo.refCount,
+              tags: [
+                ...new Set(
+                  [
+                    "tagInfo",
+                    "riskTagInfo",
+                    "factTagInfo",
+                    "typeTagInfo",
+                    "customTagInfo",
+                  ].flatMap((key) => Object.values(r.catalogInfo[key] || {})),
+                ),
+              ],
+            }
+          : {}),
       });
-      raw("rule", r.id, r);
+      const prior = options.additive
+        ? (db
+            .prepare(
+              "SELECT data FROM source_archives WHERE kind='rule' AND id=? AND version=''",
+            )
+            .get(r.id) as any)
+        : undefined;
+      const old = prior ? JSON.parse(prior.data) : {};
+      raw("rule", r.id, {
+        ...old,
+        ...r,
+        ...(r.catalogInfo && (old.detail || r.detail)
+          ? {
+              detail: {
+                ...old.detail,
+                ...r.detail,
+                basicInfo: {
+                  ...old.detail?.basicInfo,
+                  ...r.detail?.basicInfo,
+                  rule: logic,
+                },
+              },
+            }
+          : {}),
+      });
     }
     const walkGraph = (
       module: string,
@@ -377,6 +520,17 @@ export function importSourceSnapshot(
     }
     const report = {
       capturedAt: captured,
+      sourceTotal: snapshot.sourceTotal,
+      interfacesCapturedAt: snapshot.interfacesCapturedAt,
+      indexedRuleCount: snapshot.indexedRuleCount,
+      protectedRules,
+      detailCounts: {
+        dependencies: snapshot.dependencies?.length || 0,
+        fetchers: snapshot.fetchers?.length || 0,
+      },
+      unavailableInterfaces: snapshot.unavailableInterfaces || [],
+      missingRuleDefinitions: snapshot.missingRuleDefinitions || [],
+      missingTypedFeatures: snapshot.missingTypedFeatures || [],
       selection: snapshot.selection,
       counts: Object.fromEntries(
         [
@@ -402,11 +556,11 @@ export function importSourceSnapshot(
       unresolvedFeatureNames: snapshot.unresolvedFeatureNames || [],
     };
     db.prepare("INSERT OR REPLACE INTO settings VALUES(?,?)").run(
-      "source-import-report",
+      options.additive ? "full-catalog-report" : "source-import-report",
       JSON.stringify(report),
     );
     db.prepare("INSERT OR REPLACE INTO settings VALUES(?,?)").run(
-      "source-import-digest",
+      options.additive ? "full-catalog-digest" : "source-import-digest",
       JSON.stringify(digest),
     );
   })();

@@ -1,3 +1,4 @@
+import { syncFullCatalogFixture } from "./full-catalog.ts";
 import { syncDetailFixtures } from "./source-details.ts";
 import Database from "better-sqlite3";
 import { initializeSourceSchema, syncSourceFixture } from "./source-import.ts";
@@ -19,6 +20,9 @@ export function openDatabase(
  CREATE TABLE IF NOT EXISTS request_logs(id INTEGER PRIMARY KEY,request_id TEXT UNIQUE,data TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS cumulative_values(factor TEXT,subject_key TEXT,value REAL,window TEXT,PRIMARY KEY(factor,subject_key));
  CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);`);
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS entities_catalog_updated ON entities(module,json_extract(data,'$.updatedAt') DESC,id DESC)",
+  );
   const insert = db.prepare(
     "INSERT INTO entities(module,id,data) VALUES (?,?,?)",
   );
@@ -301,5 +305,7 @@ export function openDatabase(
     db,
     path === (process.env.DATABASE_PATH || "data/zeus.sqlite"),
   );
+  if (path === (process.env.DATABASE_PATH || "data/zeus.sqlite"))
+    syncFullCatalogFixture(db);
   return db;
 }

@@ -14,3 +14,5 @@ jobs:
       - run: npm run build
       - run: npm run verify:source
       - run: npm run verify:details
+      - run: npm run test:capture
+      - run: npm run verify:catalog

@@ -1,3 +1,4 @@
+import { listCatalogEntities } from "./catalog-list.ts";
 import { registerDetailRoutes } from "./source-details.ts";
 import express from "express";
 import type Database from "better-sqlite3";
@@ -160,6 +161,12 @@ export function createApp(db: Database.Database) {
         .filter((r) => names.includes(r.enName)),
     });
   });
+  app.get("/api/source/full-catalog/report", (_req, res) => {
+    const row = db
+      .prepare("SELECT value FROM settings WHERE key='full-catalog-report'")
+      .get() as any;
+    res.json(row ? JSON.parse(row.value) : { counts: {}, available: false });
+  });
   app.get("/api/source/report", (_req, res) => {
     const row = db
       .prepare("SELECT value FROM settings WHERE key=?")
@@ -243,6 +250,8 @@ export function createApp(db: Database.Database) {
   app.get("/api/entities/:module", (req, res) => {
     const m = req.params.module;
     if (!moduleMap[m]) return res.status(404).json({ error: "模块不存在" });
+    if (["rulePage", "featureService"].includes(m))
+      return res.json(listCatalogEntities(db, m, req.query));
     let rows = (
       db
         .prepare("SELECT data FROM entities WHERE module=? ORDER BY id DESC")

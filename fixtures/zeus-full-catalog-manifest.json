@@ -1,0 +1,1925 @@
+{
+  "schemaVersion": 1,
+  "businessCode": 35,
+  "capturedAt": "2026-11-18T04:10:56.413341+00:00",
+  "interfacesCapturedAt": "2026-11-18T04:38:27.936275+00:00",
+  "startedAt": "2026-11-18T03:26:06.945863+00:00",
+  "sourceTotal": 28583,
+  "sha256": "745ed694a0b688162f244dbe521480598333316166470830cc206339ba96c3a1",
+  "parts": [
+    {
+      "path": "fixtures/zeus-full-catalog/part-000.bin",
+      "size": 262144,
+      "sha256": "7bffa491803a14cdbe1bc489bce55864995cba58aa659db0a015f8b4ed392c12"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-001.bin",
+      "size": 262144,
+      "sha256": "f22712b596f10f45cdeb2977dfb70edd84e399cf8e156c318250730d7cc6008d"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-002.bin",
+      "size": 262144,
+      "sha256": "0caaed5820318189d937e608e3afa39fad85f7a55c25dcebecaf0de977bc55ac"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-003.bin",
+      "size": 262144,
+      "sha256": "1c8e92bd5f577d791a31282494777b3e475ed53f6a2188d08d6bcfab32706b66"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-004.bin",
+      "size": 262144,
+      "sha256": "540a1e229e8743ee643b0bf96238f1907a0bf04f2aad6448fde27fb2db2d5063"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-005.bin",
+      "size": 262144,
+      "sha256": "e9fdb348417a5343995ff5aec3ba720299a2b37af10f2aea0da24c2f73ddbfc6"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-006.bin",
+      "size": 262144,
+      "sha256": "544ce8e8ce3feff3f3e4ecc367c5d367af2db56f7b15b08bdecaf0b14f0864ef"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-007.bin",
+      "size": 262144,
+      "sha256": "ed40d3df4307d9e87cb4082910cd25653c31ff83d5eb710bf39a63cf12df9068"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-008.bin",
+      "size": 262144,
+      "sha256": "361fb95ace760faba865e6b33b06b70aeae659439e2f667566d4ee4cb0adb461"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-009.bin",
+      "size": 262144,
+      "sha256": "a330b3a5078cf681b32532ffa0531495ebfbc5b514f3e2c4f3cbd086e0e871e2"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-010.bin",
+      "size": 262144,
+      "sha256": "26fd711962e1edf17d06bffc518ec5c5cc226f84065373e664e0000da8916b1c"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-011.bin",
+      "size": 262144,
+      "sha256": "a501acb75325d08f412b50300b82a485b00eb90bff71017f8891043db98f5dff"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-012.bin",
+      "size": 262144,
+      "sha256": "a1f319169384abfea2c05a421f661988b05cdca2d1d32f18b142eb27da92d079"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-013.bin",
+      "size": 262144,
+      "sha256": "b1d4e85dbbbc2de5ac071023377951a7cea3a506355b75383f6ece13ac9b0e38"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-014.bin",
+      "size": 262144,
+      "sha256": "af4595d41ff6a66044d8b10de04b2d6a2023957aa234945e8dfb424b4b0866e0"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-015.bin",
+      "size": 262144,
+      "sha256": "c089edbf0cefc585279f7fd6c5e1e3f9fa89d2b97b670ec6536fefc53f4c2e6a"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-016.bin",
+      "size": 262144,
+      "sha256": "49830bc5d7cd3977b292fddcc39468174e1e3d7622af305245d6378c6b18f770"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-017.bin",
+      "size": 262144,
+      "sha256": "6aa5c1f2e6e3bf7f09c4eac87c191ea99da138fc178e3fbffadddcee8e988cfe"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-018.bin",
+      "size": 262144,
+      "sha256": "5630c164d20f6dbfebc647955c418ac1a93a3734cfc47bf574f1460b8fa6a982"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-019.bin",
+      "size": 262144,
+      "sha256": "ead97a08e413055cafba48374c064a0facacffd2da85eb43aa637633633b2819"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-020.bin",
+      "size": 262144,
+      "sha256": "7d5134914b17693c0cb33b94b8c7a84423bded2b0ab203d8dee1a1f6eb2fbed8"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-021.bin",
+      "size": 262144,
+      "sha256": "aacb6455c08ce64cefb3bbb1b57de3c78b05fbb12c15c1c5baf2fc5cfa126918"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-022.bin",
+      "size": 262144,
+      "sha256": "66170094a42b7603e90cb1f2c1dde3096cc320ab5024961618d8d82c0839e296"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-023.bin",
+      "size": 262144,
+      "sha256": "f185694537aac9e8af22edaf8b77466f55c473f3bf35f29b2b5141ea529eab15"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-024.bin",
+      "size": 262144,
+      "sha256": "50c0c69cb42ae1a9a2a056e78db46c2e177b60bbbd1f7fb73f46b41397b61744"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-025.bin",
+      "size": 262144,
+      "sha256": "dcc472c361b8c22070d070890ce7b284c774cb5b519898d58124ecbe5d83ab2e"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-026.bin",
+      "size": 262144,
+      "sha256": "8a1cb15739e08f6dd5c935fda9268ced870afab822375ed52cc22e28df0dde3e"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-027.bin",
+      "size": 262144,
+      "sha256": "8b360578752457f23a765b634053943b82a512b15b095b0b9c600aba2863fe14"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-028.bin",
+      "size": 262144,
+      "sha256": "4549950cd8501720f867fb9ebcf8461d9165aa63e2941a91e97853c20ec93109"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-029.bin",
+      "size": 262144,
+      "sha256": "24d0a5aaee4504f35dd28653216dddf629bb5d065d2d97b2ead9cf9fa5d5d49b"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-030.bin",
+      "size": 262144,
+      "sha256": "dd0a60a919d68d4ecaa68a63a488f502e84c925c4b340a9fc8d882d832e633f1"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-031.bin",
+      "size": 262144,
+      "sha256": "f04a4984163439820443c55c1ce7862e73a867861964e58f864b5e7a24340bbf"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-032.bin",
+      "size": 262144,
+      "sha256": "b7270eb8abd34dd5205207cb4e5d35fe73b5d36d86225ce9d037e2f6d234a5f3"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-033.bin",
+      "size": 262144,
+      "sha256": "48ee1f453481f2968be4bc3d8d840302a08aff219d21097c44890823f0e8f95e"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-034.bin",
+      "size": 262144,
+      "sha256": "51290fb68cb01a50ed95ef6c2e849aeb00d0779865666003990c9e08ae906ebf"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-035.bin",
+      "size": 262144,
+      "sha256": "d969a488b569468d191e98a70f397d162e862643901db60186d6d8f0e64acc68"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-036.bin",
+      "size": 262144,
+      "sha256": "2a420c7a346738aacd345d797a8e67c034b53525d4020b5c0ca02a5aa14ef580"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-037.bin",
+      "size": 262144,
+      "sha256": "4e1a33fbe647863228230490d523dd784222d3078b7d433cfdcb852b44e5b49b"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-038.bin",
+      "size": 262144,
+      "sha256": "5da6676299aeb68a53790e2beb6014598dfce911fc328fefcef9d5b636a5de55"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-039.bin",
+      "size": 262144,
+      "sha256": "56ac8bea5c9897238cc25cb6422fa132dd0a4bc24f7906a031feee12fba61eb7"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-040.bin",
+      "size": 262144,
+      "sha256": "d823c56f8afb8bd4d212c1f258799078a97b75a8dcd5e0427bfe5ae03fd0600c"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-041.bin",
+      "size": 262144,
+      "sha256": "47875a137ace335a9bb9cbd824739f8fb66f62f861b325730bd04711efbfee70"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-042.bin",
+      "size": 262144,
+      "sha256": "116dab1b78775b41b64fe053d7aafa86b13ef1e44e48d245c689ea2715ed0a37"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-043.bin",
+      "size": 262144,
+      "sha256": "7be3417731606dfb138bfa6bd1944db3bbe81c5f31c3b9dd628239f8fffc275f"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-044.bin",
+      "size": 262144,
+      "sha256": "d78b37d600cf7a4c9e47039289e42b44fd65fa3bb61af9200e8e86c272e96e94"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-045.bin",
+      "size": 262144,
+      "sha256": "5094d218c2d8469ef5d5dfae129e5f4fdec913e972840d7f8990251a5b06cae3"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-046.bin",
+      "size": 262144,
+      "sha256": "11286296b769b70d54182f2a8253d2a3422e8ebf1a9e4c3457d427e75b58aca2"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-047.bin",
+      "size": 262144,
+      "sha256": "dc5fad9281f4d4b950b864f57336f8d15f3f3dd6f84dc6fa73de1a9bfb9f8766"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-048.bin",
+      "size": 262144,
+      "sha256": "c7851116ffc1f554013930279bb505cca301954bbf8a884b7568dcff71197264"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-049.bin",
+      "size": 262144,
+      "sha256": "1181aafbd658e8f0d1a7b28a3fee4743b0e86396d1f1faade2ff20ce360c5c41"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-050.bin",
+      "size": 262144,
+      "sha256": "1c3b44fd4b1b9a6ad157d145a8efa2a83674d46c3d169d7c198021959f79152b"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-051.bin",
+      "size": 262144,
+      "sha256": "3bf755a1bbb0689e99af14c5c89e977c1adaaf00e18721d419da7cacaa51cbf7"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-052.bin",
+      "size": 262144,
+      "sha256": "086cf5991a2a2fff721df4ae3bab08f9e6e1617e0e9e4d6c364c998eedce3900"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-053.bin",
+      "size": 262144,
+      "sha256": "b34d233a8855c11965f6cc6767a141819efbc6800d1ae25a8d93a060c37811c3"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-054.bin",
+      "size": 262144,
+      "sha256": "e35d1e45176f6246beaef0b24224d2d3c4afeb2a8e6c7df59667f0a178384023"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-055.bin",
+      "size": 262144,
+      "sha256": "0bcb7b75d0a492cf8555628b3e3532125bd97b77d27f0fbceb19c847a732e0cc"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-056.bin",
+      "size": 262144,
+      "sha256": "6976d8e3c04b17e8218954afe58bf34019f3260e70ef6bfbf251597f67ae69c1"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-057.bin",
+      "size": 262144,
+      "sha256": "508f33b96b7db45670861a52c67ed129e3c2abf0effec16010f45406e9aa46a5"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-058.bin",
+      "size": 262144,
+      "sha256": "5c12af05dda112486c61c7172611aa3480fc01218927ca412b919f9d46965889"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-059.bin",
+      "size": 262144,
+      "sha256": "08f445c95714c756905910aa353a1dd343b95ac5552d8d1fe0499d862ee5fe14"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-060.bin",
+      "size": 262144,
+      "sha256": "9ad9cf4c328d3b72b4da56097750c4730adbb07300026e64fabe683bc656b752"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-061.bin",
+      "size": 262144,
+      "sha256": "bbb895837053f0e1520ca9d3aa9530018689ef1acd6671c595103e586b626860"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-062.bin",
+      "size": 108798,
+      "sha256": "2987d483d73f8522e460c252192e17876ce54f166639fe0275e4b9dc7073a117"
+    }
+  ],
+  "counts": {
+    "rules": 28583,
+    "features": 19732,
+    "unavailableFeatures": 141,
+    "dependencies": 1157,
+    "fetchers": 848
+  },
+  "missingRuleDefinitions": [],
+  "unavailableFeatures": [
+    {
+      "id": 71,
+      "kind": "factor",
+      "reason": "因子不存在，id: 71",
+      "referenceNames": []
+    },
+    {
+      "id": 846,
+      "kind": "factor",
+      "reason": "因子不存在，id: 846",
+      "referenceNames": [
+        "factor_uuid_accumulate"
+      ]
+    },
+    {
+      "id": 1448,
+      "kind": "factor",
+      "reason": "因子不存在，id: 1448",
+      "referenceNames": [
+        "factor_amount"
+      ]
+    },
+    {
+      "id": 1535,
+      "kind": "factor",
+      "reason": "因子不存在，id: 1535",
+      "referenceNames": [
+        "cat1name"
+      ]
+    },
+    {
+      "id": 1656,
+      "kind": "factor",
+      "reason": "因子不存在，id: 1656",
+      "referenceNames": []
+    },
+    {
+      "id": 1657,
+      "kind": "factor",
+      "reason": "因子不存在，id: 1657",
+      "referenceNames": []
+    },
+    {
+      "id": 2062,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2062",
+      "referenceNames": []
+    },
+    {
+      "id": 2064,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2064",
+      "referenceNames": []
+    },
+    {
+      "id": 2094,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2094",
+      "referenceNames": []
+    },
+    {
+      "id": 2148,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2148",
+      "referenceNames": []
+    },
+    {
+      "id": 2163,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2163",
+      "referenceNames": []
+    },
+    {
+      "id": 2177,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2177",
+      "referenceNames": []
+    },
+    {
+      "id": 2179,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2179",
+      "referenceNames": []
+    },
+    {
+      "id": 2186,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2186",
+      "referenceNames": []
+    },
+    {
+      "id": 2187,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2187",
+      "referenceNames": []
+    },
+    {
+      "id": 2200,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2200",
+      "referenceNames": []
+    },
+    {
+      "id": 2230,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2230",
+      "referenceNames": []
+    },
+    {
+      "id": 2232,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2232",
+      "referenceNames": []
+    },
+    {
+      "id": 2234,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2234",
+      "referenceNames": []
+    },
+    {
+      "id": 2236,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2236",
+      "referenceNames": []
+    },
+    {
+      "id": 2240,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2240",
+      "referenceNames": []
+    },
+    {
+      "id": 2241,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2241",
+      "referenceNames": []
+    },
+    {
+      "id": 2242,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2242",
+      "referenceNames": []
+    },
+    {
+      "id": 2243,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2243",
+      "referenceNames": []
+    },
+    {
+      "id": 2245,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2245",
+      "referenceNames": []
+    },
+    {
+      "id": 2246,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2246",
+      "referenceNames": []
+    },
+    {
+      "id": 2247,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2247",
+      "referenceNames": []
+    },
+    {
+      "id": 2252,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2252",
+      "referenceNames": []
+    },
+    {
+      "id": 2253,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2253",
+      "referenceNames": []
+    },
+    {
+      "id": 2277,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2277",
+      "referenceNames": []
+    },
+    {
+      "id": 2285,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2285",
+      "referenceNames": []
+    },
+    {
+      "id": 2287,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2287",
+      "referenceNames": []
+    },
+    {
+      "id": 2289,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2289",
+      "referenceNames": []
+    },
+    {
+      "id": 2293,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2293",
+      "referenceNames": []
+    },
+    {
+      "id": 2294,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2294",
+      "referenceNames": []
+    },
+    {
+      "id": 2296,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2296",
+      "referenceNames": []
+    },
+    {
+      "id": 2297,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2297",
+      "referenceNames": []
+    },
+    {
+      "id": 2298,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2298",
+      "referenceNames": []
+    },
+    {
+      "id": 2299,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2299",
+      "referenceNames": []
+    },
+    {
+      "id": 2300,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2300",
+      "referenceNames": []
+    },
+    {
+      "id": 2301,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2301",
+      "referenceNames": []
+    },
+    {
+      "id": 2309,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2309",
+      "referenceNames": []
+    },
+    {
+      "id": 2310,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2310",
+      "referenceNames": []
+    },
+    {
+      "id": 2311,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2311",
+      "referenceNames": []
+    },
+    {
+      "id": 2314,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2314",
+      "referenceNames": []
+    },
+    {
+      "id": 2321,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2321",
+      "referenceNames": []
+    },
+    {
+      "id": 2322,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2322",
+      "referenceNames": []
+    },
+    {
+      "id": 2323,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2323",
+      "referenceNames": []
+    },
+    {
+      "id": 2324,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2324",
+      "referenceNames": []
+    },
+    {
+      "id": 2325,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2325",
+      "referenceNames": []
+    },
+    {
+      "id": 2328,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2328",
+      "referenceNames": []
+    },
+    {
+      "id": 2329,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2329",
+      "referenceNames": []
+    },
+    {
+      "id": 2333,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2333",
+      "referenceNames": []
+    },
+    {
+      "id": 2343,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2343",
+      "referenceNames": []
+    },
+    {
+      "id": 2414,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2414",
+      "referenceNames": []
+    },
+    {
+      "id": 2415,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2415",
+      "referenceNames": []
+    },
+    {
+      "id": 2416,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2416",
+      "referenceNames": []
+    },
+    {
+      "id": 2417,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2417",
+      "referenceNames": []
+    },
+    {
+      "id": 2418,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2418",
+      "referenceNames": []
+    },
+    {
+      "id": 2419,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2419",
+      "referenceNames": []
+    },
+    {
+      "id": 2439,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2439",
+      "referenceNames": []
+    },
+    {
+      "id": 2448,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2448",
+      "referenceNames": []
+    },
+    {
+      "id": 2477,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2477",
+      "referenceNames": []
+    },
+    {
+      "id": 2478,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2478",
+      "referenceNames": []
+    },
+    {
+      "id": 2479,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2479",
+      "referenceNames": []
+    },
+    {
+      "id": 2480,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2480",
+      "referenceNames": []
+    },
+    {
+      "id": 3145,
+      "kind": "factor",
+      "reason": "因子不存在，id: 3145",
+      "referenceNames": []
+    },
+    {
+      "id": 3287,
+      "kind": "factor",
+      "reason": "因子不存在，id: 3287",
+      "referenceNames": []
+    },
+    {
+      "id": 3294,
+      "kind": "factor",
+      "reason": "因子不存在，id: 3294",
+      "referenceNames": []
+    },
+    {
+      "id": 3645,
+      "kind": "factor",
+      "reason": "因子不存在，id: 3645",
+      "referenceNames": []
+    },
+    {
+      "id": 3695,
+      "kind": "factor",
+      "reason": "因子不存在，id: 3695",
+      "referenceNames": []
+    },
+    {
+      "id": 4531,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4531",
+      "referenceNames": []
+    },
+    {
+      "id": 4571,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4571",
+      "referenceNames": []
+    },
+    {
+      "id": 4574,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4574",
+      "referenceNames": []
+    },
+    {
+      "id": 4670,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4670",
+      "referenceNames": []
+    },
+    {
+      "id": 4682,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4682",
+      "referenceNames": []
+    },
+    {
+      "id": 4684,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4684",
+      "referenceNames": []
+    },
+    {
+      "id": 4715,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4715",
+      "referenceNames": []
+    },
+    {
+      "id": 4718,
+      "kind": "factor",
+      "reason": "因子不存在，id: 4718",
+      "referenceNames": []
+    },
+    {
+      "id": 5223,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5223",
+      "referenceNames": []
+    },
+    {
+      "id": 5235,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5235",
+      "referenceNames": []
+    },
+    {
+      "id": 5236,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5236",
+      "referenceNames": []
+    },
+    {
+      "id": 5282,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5282",
+      "referenceNames": []
+    },
+    {
+      "id": 5552,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5552",
+      "referenceNames": []
+    },
+    {
+      "id": 5663,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5663",
+      "referenceNames": []
+    },
+    {
+      "id": 6935,
+      "kind": "factor",
+      "reason": "因子不存在，id: 6935",
+      "referenceNames": []
+    },
+    {
+      "id": 7945,
+      "kind": "factor",
+      "reason": "因子不存在，id: 7945",
+      "referenceNames": [
+        "taskFlowId"
+      ]
+    },
+    {
+      "id": 8429,
+      "kind": "factor",
+      "reason": "因子不存在，id: 8429",
+      "referenceNames": [
+        "factor_dp_collectdata_wifimaccompany"
+      ]
+    },
+    {
+      "id": 8434,
+      "kind": "factor",
+      "reason": "因子不存在，id: 8434",
+      "referenceNames": [
+        "factor_dp_collectdata_wifimac"
+      ]
+    },
+    {
+      "id": 9185,
+      "kind": "factor",
+      "reason": "因子不存在，id: 9185",
+      "referenceNames": [
+        "factor_redenvolopeIdamout"
+      ]
+    },
+    {
+      "id": 14435,
+      "kind": "factor",
+      "reason": "因子不存在，id: 14435",
+      "referenceNames": [
+        "factor_userid_rebindmobile_success_in1days"
+      ]
+    },
+    {
+      "id": 14798,
+      "kind": "factor",
+      "reason": "因子不存在，id: 14798",
+      "referenceNames": [
+        "factor_UserScore_waimai"
+      ]
+    },
+    {
+      "id": 24537,
+      "kind": "factor",
+      "reason": "因子不存在，id: 24537",
+      "referenceNames": [
+        "contentType"
+      ]
+    },
+    {
+      "id": 25710,
+      "kind": "factor",
+      "reason": "因子不存在，id: 25710",
+      "referenceNames": [
+        "factor_poi_1d_rooted_user_acc"
+      ]
+    },
+    {
+      "id": 25723,
+      "kind": "factor",
+      "reason": "因子不存在，id: 25723",
+      "referenceNames": [
+        "factor_poi_1d_sensitive_device_user_acc"
+      ]
+    },
+    {
+      "id": 28314,
+      "kind": "factor",
+      "reason": "因子不存在，id: 28314",
+      "referenceNames": [
+        "factor_tair_sourceuserid"
+      ]
+    },
+    {
+      "id": 43114,
+      "kind": "factor",
+      "reason": "因子不存在，id: 43114",
+      "referenceNames": [
+        "factor_same_sourceuserid_paytype_dm_ch_volume_last7d_cnt"
+      ]
+    },
+    {
+      "id": 43378,
+      "kind": "factor",
+      "reason": "因子不存在，id: 43378",
+      "referenceNames": [
+        "factor_same_sourceuserid_fakeDevice_iphone_coreFileAbnoemal_last30d_cnt"
+      ]
+    },
+    {
+      "id": 45614,
+      "kind": "factor",
+      "reason": "因子不存在，id: 45614",
+      "referenceNames": [
+        "factor_receive_uid"
+      ]
+    },
+    {
+      "id": 46786,
+      "kind": "factor",
+      "reason": "因子不存在，id: 46786",
+      "referenceNames": [
+        "factor_same_sourceuserid_fakeDevice_android_romUsageNotEngough_last30d_cnt"
+      ]
+    },
+    {
+      "id": 1626128,
+      "kind": "factor",
+      "reason": "因子不存在，id: 1626128",
+      "referenceNames": [
+        "shopProvinceName"
+      ]
+    },
+    {
+      "id": 1640379,
+      "kind": "factor",
+      "reason": "因子不存在，id: 1640379",
+      "referenceNames": [
+        "shop_cat1name_new"
+      ]
+    },
+    {
+      "id": 2358089,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2358089",
+      "referenceNames": [
+        "factor_account_mobile7_risk_prediction_v3"
+      ]
+    },
+    {
+      "id": 2371077,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2371077",
+      "referenceNames": [
+        "factor_rt_r_star"
+      ]
+    },
+    {
+      "id": 2371134,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2371134",
+      "referenceNames": [
+        "factor_rt_u_power"
+      ]
+    },
+    {
+      "id": 2372525,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2372525",
+      "referenceNames": [
+        "factor_consec_765_dp_userid_device_cumulate_1_7d_highrisk"
+      ]
+    },
+    {
+      "id": 2375311,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2375311",
+      "referenceNames": [
+        "factor_jiulv_gov_magicCubeCampaignid1919"
+      ]
+    },
+    {
+      "id": 2376844,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2376844",
+      "referenceNames": [
+        "factor_attack_mtgsig"
+      ]
+    },
+    {
+      "id": 2377030,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2377030",
+      "referenceNames": [
+        "factor_attack_mtgsig_ms"
+      ]
+    },
+    {
+      "id": 2378370,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2378370",
+      "referenceNames": [
+        "factor_attack_signature_platform"
+      ]
+    },
+    {
+      "id": 2378768,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2378768",
+      "referenceNames": [
+        "factor_jingwai_gov_magicCubeCampaignid"
+      ]
+    },
+    {
+      "id": 2379152,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2379152",
+      "referenceNames": [
+        "factor_rt_s_cat0name"
+      ]
+    },
+    {
+      "id": 2379153,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2379153",
+      "referenceNames": [
+        "factor_rt_s_cat1name"
+      ]
+    },
+    {
+      "id": 2381658,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2381658",
+      "referenceNames": [
+        "factor_consec_live_asrisnull_2min"
+      ]
+    },
+    {
+      "id": 2383052,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2383052",
+      "referenceNames": [
+        "feature_account_mobile7_risk_model_tag_v3"
+      ]
+    },
+    {
+      "id": 2383053,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2383053",
+      "referenceNames": [
+        "feature_account_mobile7_risk_model_prob_v3"
+      ]
+    },
+    {
+      "id": 2383558,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2383558",
+      "referenceNames": [
+        "feature_account_mobile7_risk_model_tag_v2"
+      ]
+    },
+    {
+      "id": 2383559,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2383559",
+      "referenceNames": [
+        "feature_account_mobile7_risk_model_prob_v2"
+      ]
+    },
+    {
+      "id": 2385334,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2385334",
+      "referenceNames": [
+        "factor_is_weiguan_shop_mt"
+      ]
+    },
+    {
+      "id": 2385867,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2385867",
+      "referenceNames": [
+        "feature_account_special_activity_filter"
+      ]
+    },
+    {
+      "id": 2389938,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2389938",
+      "referenceNames": [
+        "factor_rt_s_weiguan_flag"
+      ]
+    },
+    {
+      "id": 2391890,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2391890",
+      "referenceNames": [
+        "kvSystem_12239_5"
+      ]
+    },
+    {
+      "id": 2392749,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2392749",
+      "referenceNames": [
+        "feature_account_mobile_sub7_guangzhou_boyuan"
+      ]
+    },
+    {
+      "id": 2392840,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2392840",
+      "referenceNames": [
+        "factor_rt_dp_us_same_cat_shop_arraymap"
+      ]
+    },
+    {
+      "id": 2392844,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2392844",
+      "referenceNames": [
+        "factor_dp_ugc_ziping_userid_shopname_featurejsonmap"
+      ]
+    },
+    {
+      "id": 2397558,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2397558",
+      "referenceNames": [
+        "factor_rt_r_checkneg_flag"
+      ]
+    },
+    {
+      "id": 2411746,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2411746",
+      "referenceNames": [
+        "factor_rt_r_consumeforweiguan_flag"
+      ]
+    },
+    {
+      "id": 2411925,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2411925",
+      "referenceNames": [
+        "factor_mt_realtime_acc_shopid_1d_distinct_weiguan_good_review_cnt"
+      ]
+    },
+    {
+      "id": 2412710,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2412710",
+      "referenceNames": [
+        "factor_consec_random"
+      ]
+    },
+    {
+      "id": 2446369,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2446369",
+      "referenceNames": [
+        "factor_rt_dp_us_peer_normal_ordamt"
+      ]
+    },
+    {
+      "id": 2453008,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2453008",
+      "referenceNames": [
+        "factor_deviceRisk_fakeDevice_samePoi_accuOrder_1d_v2"
+      ]
+    },
+    {
+      "id": 2481006,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2481006",
+      "referenceNames": [
+        "factor_deviceRisk_fakeDevice_samePoi_accuDeal_1d_v2"
+      ]
+    },
+    {
+      "id": 2490008,
+      "kind": "factor",
+      "reason": "因子不存在，id: 2490008",
+      "referenceNames": [
+        "factor_jiulv_fakeDevice_sameCube_cnt_1d_v2"
+      ]
+    },
+    {
+      "id": 5007139,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5007139",
+      "referenceNames": [
+        "feature_dl_llm_zoology_pic_4142_cmc_threshold_split_result"
+      ]
+    },
+    {
+      "id": 5023139,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5023139",
+      "referenceNames": [
+        "feature_dl_llm_zoology_pic_4118_split_result"
+      ]
+    },
+    {
+      "id": 5025078,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5025078",
+      "referenceNames": [
+        "feature_dl_llm_compliance_pic_4133_split_result"
+      ]
+    },
+    {
+      "id": 5038051,
+      "kind": "factor",
+      "reason": "因子不存在，id: 5038051",
+      "referenceNames": [
+        "feature_dl_llm_policy_pic_4095_split_result"
+      ]
+    },
+    {
+      "id": 24550,
+      "kind": "param",
+      "reason": "完整参数目录未包含此 ID，未取得源定义",
+      "referenceNames": [
+        "factor_consec_referid"
+      ]
+    },
+    {
+      "id": 1620750,
+      "kind": "param",
+      "reason": "完整参数目录未包含此 ID，未取得源定义",
+      "referenceNames": [
+        "productName"
+      ]
+    },
+    {
+      "id": 1620751,
+      "kind": "param",
+      "reason": "完整参数目录未包含此 ID，未取得源定义",
+      "referenceNames": [
+        "categoryName"
+      ]
+    },
+    {
+      "id": 2395068,
+      "kind": "param",
+      "reason": "完整参数目录未包含此 ID，未取得源定义",
+      "referenceNames": [
+        "keywordMatchprod_allpic_bagid_notcommodity"
+      ]
+    }
+  ],
+  "missingTypedFeatures": [
+    {
+      "kind": "factor",
+      "id": 71
+    },
+    {
+      "kind": "factor",
+      "id": 846
+    },
+    {
+      "kind": "factor",
+      "id": 1448
+    },
+    {
+      "kind": "factor",
+      "id": 1535
+    },
+    {
+      "kind": "factor",
+      "id": 1656
+    },
+    {
+      "kind": "factor",
+      "id": 1657
+    },
+    {
+      "kind": "factor",
+      "id": 2062
+    },
+    {
+      "kind": "factor",
+      "id": 2064
+    },
+    {
+      "kind": "factor",
+      "id": 2094
+    },
+    {
+      "kind": "factor",
+      "id": 2148
+    },
+    {
+      "kind": "factor",
+      "id": 2163
+    },
+    {
+      "kind": "factor",
+      "id": 2177
+    },
+    {
+      "kind": "factor",
+      "id": 2179
+    },
+    {
+      "kind": "factor",
+      "id": 2186
+    },
+    {
+      "kind": "factor",
+      "id": 2187
+    },
+    {
+      "kind": "factor",
+      "id": 2200
+    },
+    {
+      "kind": "factor",
+      "id": 2230
+    },
+    {
+      "kind": "factor",
+      "id": 2232
+    },
+    {
+      "kind": "factor",
+      "id": 2234
+    },
+    {
+      "kind": "factor",
+      "id": 2236
+    },
+    {
+      "kind": "factor",
+      "id": 2240
+    },
+    {
+      "kind": "factor",
+      "id": 2241
+    },
+    {
+      "kind": "factor",
+      "id": 2242
+    },
+    {
+      "kind": "factor",
+      "id": 2243
+    },
+    {
+      "kind": "factor",
+      "id": 2245
+    },
+    {
+      "kind": "factor",
+      "id": 2246
+    },
+    {
+      "kind": "factor",
+      "id": 2247
+    },
+    {
+      "kind": "factor",
+      "id": 2252
+    },
+    {
+      "kind": "factor",
+      "id": 2253
+    },
+    {
+      "kind": "factor",
+      "id": 2277
+    },
+    {
+      "kind": "factor",
+      "id": 2285
+    },
+    {
+      "kind": "factor",
+      "id": 2287
+    },
+    {
+      "kind": "factor",
+      "id": 2289
+    },
+    {
+      "kind": "factor",
+      "id": 2293
+    },
+    {
+      "kind": "factor",
+      "id": 2294
+    },
+    {
+      "kind": "factor",
+      "id": 2296
+    },
+    {
+      "kind": "factor",
+      "id": 2297
+    },
+    {
+      "kind": "factor",
+      "id": 2298
+    },
+    {
+      "kind": "factor",
+      "id": 2299
+    },
+    {
+      "kind": "factor",
+      "id": 2300
+    },
+    {
+      "kind": "factor",
+      "id": 2301
+    },
+    {
+      "kind": "factor",
+      "id": 2309
+    },
+    {
+      "kind": "factor",
+      "id": 2310
+    },
+    {
+      "kind": "factor",
+      "id": 2311
+    },
+    {
+      "kind": "factor",
+      "id": 2314
+    },
+    {
+      "kind": "factor",
+      "id": 2321
+    },
+    {
+      "kind": "factor",
+      "id": 2322
+    },
+    {
+      "kind": "factor",
+      "id": 2323
+    },
+    {
+      "kind": "factor",
+      "id": 2324
+    },
+    {
+      "kind": "factor",
+      "id": 2325
+    },
+    {
+      "kind": "factor",
+      "id": 2328
+    },
+    {
+      "kind": "factor",
+      "id": 2329
+    },
+    {
+      "kind": "factor",
+      "id": 2333
+    },
+    {
+      "kind": "factor",
+      "id": 2343
+    },
+    {
+      "kind": "factor",
+      "id": 2414
+    },
+    {
+      "kind": "factor",
+      "id": 2415
+    },
+    {
+      "kind": "factor",
+      "id": 2416
+    },
+    {
+      "kind": "factor",
+      "id": 2417
+    },
+    {
+      "kind": "factor",
+      "id": 2418
+    },
+    {
+      "kind": "factor",
+      "id": 2419
+    },
+    {
+      "kind": "factor",
+      "id": 2439
+    },
+    {
+      "kind": "factor",
+      "id": 2448
+    },
+    {
+      "kind": "factor",
+      "id": 2477
+    },
+    {
+      "kind": "factor",
+      "id": 2478
+    },
+    {
+      "kind": "factor",
+      "id": 2479
+    },
+    {
+      "kind": "factor",
+      "id": 2480
+    },
+    {
+      "kind": "factor",
+      "id": 3145
+    },
+    {
+      "kind": "factor",
+      "id": 3287
+    },
+    {
+      "kind": "factor",
+      "id": 3294
+    },
+    {
+      "kind": "factor",
+      "id": 3645
+    },
+    {
+      "kind": "factor",
+      "id": 3695
+    },
+    {
+      "kind": "factor",
+      "id": 4531
+    },
+    {
+      "kind": "factor",
+      "id": 4571
+    },
+    {
+      "kind": "factor",
+      "id": 4574
+    },
+    {
+      "kind": "factor",
+      "id": 4670
+    },
+    {
+      "kind": "factor",
+      "id": 4682
+    },
+    {
+      "kind": "factor",
+      "id": 4684
+    },
+    {
+      "kind": "factor",
+      "id": 4715
+    },
+    {
+      "kind": "factor",
+      "id": 4718
+    },
+    {
+      "kind": "factor",
+      "id": 5223
+    },
+    {
+      "kind": "factor",
+      "id": 5235
+    },
+    {
+      "kind": "factor",
+      "id": 5236
+    },
+    {
+      "kind": "factor",
+      "id": 5282
+    },
+    {
+      "kind": "factor",
+      "id": 5552
+    },
+    {
+      "kind": "factor",
+      "id": 5663
+    },
+    {
+      "kind": "factor",
+      "id": 6935
+    },
+    {
+      "kind": "factor",
+      "id": 7945
+    },
+    {
+      "kind": "factor",
+      "id": 8429
+    },
+    {
+      "kind": "factor",
+      "id": 8434
+    },
+    {
+      "kind": "factor",
+      "id": 9185
+    },
+    {
+      "kind": "factor",
+      "id": 14435
+    },
+    {
+      "kind": "factor",
+      "id": 14798
+    },
+    {
+      "kind": "factor",
+      "id": 24537
+    },
+    {
+      "kind": "factor",
+      "id": 25710
+    },
+    {
+      "kind": "factor",
+      "id": 25723
+    },
+    {
+      "kind": "factor",
+      "id": 28314
+    },
+    {
+      "kind": "factor",
+      "id": 43114
+    },
+    {
+      "kind": "factor",
+      "id": 43378
+    },
+    {
+      "kind": "factor",
+      "id": 45614
+    },
+    {
+      "kind": "factor",
+      "id": 46786
+    },
+    {
+      "kind": "factor",
+      "id": 1626128
+    },
+    {
+      "kind": "factor",
+      "id": 1640379
+    },
+    {
+      "kind": "factor",
+      "id": 2358089
+    },
+    {
+      "kind": "factor",
+      "id": 2371077
+    },
+    {
+      "kind": "factor",
+      "id": 2371134
+    },
+    {
+      "kind": "factor",
+      "id": 2372525
+    },
+    {
+      "kind": "factor",
+      "id": 2375311
+    },
+    {
+      "kind": "factor",
+      "id": 2376844
+    },
+    {
+      "kind": "factor",
+      "id": 2377030
+    },
+    {
+      "kind": "factor",
+      "id": 2378370
+    },
+    {
+      "kind": "factor",
+      "id": 2378768
+    },
+    {
+      "kind": "factor",
+      "id": 2379152
+    },
+    {
+      "kind": "factor",
+      "id": 2379153
+    },
+    {
+      "kind": "factor",
+      "id": 2381658
+    },
+    {
+      "kind": "factor",
+      "id": 2383052
+    },
+    {
+      "kind": "factor",
+      "id": 2383053
+    },
+    {
+      "kind": "factor",
+      "id": 2383558
+    },
+    {
+      "kind": "factor",
+      "id": 2383559
+    },
+    {
+      "kind": "factor",
+      "id": 2385334
+    },
+    {
+      "kind": "factor",
+      "id": 2385867
+    },
+    {
+      "kind": "factor",
+      "id": 2389938
+    },
+    {
+      "kind": "factor",
+      "id": 2391890
+    },
+    {
+      "kind": "factor",
+      "id": 2392749
+    },
+    {
+      "kind": "factor",
+      "id": 2392840
+    },
+    {
+      "kind": "factor",
+      "id": 2392844
+    },
+    {
+      "kind": "factor",
+      "id": 2397558
+    },
+    {
+      "kind": "factor",
+      "id": 2411746
+    },
+    {
+      "kind": "factor",
+      "id": 2411925
+    },
+    {
+      "kind": "factor",
+      "id": 2412710
+    },
+    {
+      "kind": "factor",
+      "id": 2446369
+    },
+    {
+      "kind": "factor",
+      "id": 2453008
+    },
+    {
+      "kind": "factor",
+      "id": 2481006
+    },
+    {
+      "kind": "factor",
+      "id": 2490008
+    },
+    {
+      "kind": "factor",
+      "id": 5007139
+    },
+    {
+      "kind": "factor",
+      "id": 5023139
+    },
+    {
+      "kind": "factor",
+      "id": 5025078
+    },
+    {
+      "kind": "factor",
+      "id": 5038051
+    },
+    {
+      "kind": "param",
+      "id": 24550
+    },
+    {
+      "kind": "param",
+      "id": 1620750
+    },
+    {
+      "kind": "param",
+      "id": 1620751
+    },
+    {
+      "kind": "param",
+      "id": 2395068
+    }
+  ],
+  "unavailableInterfaces": [],
+  "unresolvedFeatureNames": [
+    "factor_UserScore_waimai",
+    "factor_account_mobile7_risk_prediction_v3",
+    "factor_amount",
+    "factor_attack_mtgsig",
+    "factor_attack_mtgsig_ms",
+    "factor_attack_signature_platform",
+    "factor_consec_765_dp_userid_device_cumulate_1_7d_highrisk",
+    "factor_consec_live_asrisnull_2min",
+    "factor_deviceRisk_fakeDevice_samePoi_accuDeal_1d_v2",
+    "factor_deviceRisk_fakeDevice_samePoi_accuOrder_1d_v2",
+    "factor_dp_collectdata_wifimac",
+    "factor_dp_collectdata_wifimaccompany",
+    "factor_dp_ugc_ziping_userid_shopname_featurejsonmap",
+    "factor_is_weiguan_shop_mt",
+    "factor_jingwai_gov_magicCubeCampaignid",
+    "factor_jiulv_fakeDevice_sameCube_cnt_1d_v2",
+    "factor_jiulv_gov_magicCubeCampaignid1919",
+    "factor_mt_realtime_acc_shopid_1d_distinct_weiguan_good_review_cnt",
+    "factor_poi_1d_rooted_user_acc",
+    "factor_poi_1d_sensitive_device_user_acc",
+    "factor_receive_uid",
+    "factor_redenvolopeIdamout",
+    "factor_rt_dp_us_chainrelmatchsuc_same_name_arraymap",
+    "factor_rt_dp_us_peer_normal_ordamt",
+    "factor_rt_dp_us_same_cat_shop_arraymap",
+    "factor_rt_r_checkneg_flag",
+    "factor_rt_r_consumeforweiguan_flag",
+    "factor_rt_r_star",
+    "factor_rt_s_cat0name",
+    "factor_rt_s_cat1name",
+    "factor_rt_s_weiguan_flag",
+    "factor_rt_u_power",
+    "factor_same_sourceuserid_fakeDevice_android_romUsageNotEngough_last30d_cnt",
+    "factor_same_sourceuserid_fakeDevice_iphone_coreFileAbnoemal_last30d_cnt",
+    "factor_same_sourceuserid_paytype_dm_ch_volume_last7d_cnt",
+    "factor_tair_sourceuserid",
+    "factor_userid_rebindmobile_success_in1days",
+    "factor_uuid_accumulate",
+    "feature_account_mobile7_risk_model_prob_v2",
+    "feature_account_mobile7_risk_model_prob_v3",
+    "feature_account_mobile7_risk_model_tag_v2",
+    "feature_account_mobile7_risk_model_tag_v3",
+    "feature_account_mobile_sub7_guangzhou_boyuan",
+    "feature_account_special_activity_filter",
+    "kvSystem_12239_5",
+    "rider_screen_swiping_count_11d",
+    "rider_screen_swiping_count_1d",
+    "rider_screen_swiping_count_41d",
+    "rider_screen_swiping_count_4d",
+    "rider_screen_swiping_count_71d",
+    "rider_serious_violations_count_30d",
+    "rider_serious_violations_count_60d"
+  ],
+  "requestPolicy": {
+    "concurrency": 1,
+    "minimumIdleSeconds": 1,
+    "rateLimitCooldownSeconds": 60,
+    "resumable": true
+  }
+}

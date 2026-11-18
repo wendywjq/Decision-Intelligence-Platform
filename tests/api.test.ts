@@ -268,3 +268,31 @@ test("precise search matches a whole ID or name while fuzzy search retains subst
   );
   assert.equal(fuzzy.data.total, 1);
 });
+
+test("large catalog SQL paging preserves literal search, metadata filters and exact ID links", async () => {
+  const row = await request("/entities/rulePage", "POST", {
+    name: "分页_%_引用'内容",
+    enName: "catalog_literal_unique",
+    tags: ["特征关联测试"],
+    status: "离线",
+    sourceId: 90909091,
+  });
+  const query = async (values: Record<string, string>) =>
+    request("/entities/rulePage?" + new URLSearchParams(values));
+  const literal = await query({ q: "_%_引用'", pageSize: "1" });
+  assert.equal(literal.data.total, 1);
+  assert.equal(literal.data.items[0].id, row.data.id);
+  const exact = await query({ id: "90909091" });
+  assert.equal(exact.data.items[0].id, row.data.id);
+  const filtered = await query({ tags: "特征关联测试", status: "离线" });
+  assert.equal(filtered.data.total, 1);
+  const absent = await query({ q: "catalog_literal_unique", status: "生效" });
+  assert.equal(absent.data.total, 0);
+  const all = await query({ pageSize: "1", page: "1" });
+  const second = await query({ pageSize: "1", page: "2" });
+  assert.ok(all.data.total > 1);
+  assert.notEqual(all.data.items[0].id, second.data.items[0].id);
+  const injected = await query({ ["name') OR 1=1 --"]: "anything" });
+  assert.equal(injected.status, 200);
+  assert.equal(injected.data.total, 0);
+});

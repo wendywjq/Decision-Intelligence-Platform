@@ -1,3 +1,4 @@
+import { gunzipSync } from "node:zlib";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { openDatabase } from "../server/db.ts";
@@ -16,8 +17,26 @@ for (const [field, kind] of [
       .prepare("SELECT COUNT(*) n FROM source_detail_objects WHERE kind=?")
       .get(kind) as any
   ).n;
-  assert.equal(n, manifest.counts[field], field);
+  if (["dependencies", "fetchers"].includes(field))
+    assert.ok(n >= manifest.counts[field], field);
+  else assert.equal(n, manifest.counts[field], field);
 }
+const baseline = JSON.parse(
+  gunzipSync(
+    Buffer.concat(manifest.parts.map((part: any) => readFileSync(part.path))),
+  ).toString(),
+);
+for (const [field, kind] of [
+  ["dependencies", "dependency"],
+  ["fetchers", "fetcher"],
+] as const)
+  for (const item of baseline[field])
+    assert.ok(
+      db
+        .prepare("SELECT 1 FROM source_detail_objects WHERE kind=? AND id=?")
+        .get(kind, String(item.id)),
+      "missing original " + kind + " " + item.id,
+    );
 for (const { data } of db
   .prepare("SELECT data FROM source_detail_objects WHERE kind='dependency'")
   .all() as any[]) {

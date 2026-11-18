@@ -1,3 +1,4 @@
+import { gunzipSync } from "node:zlib";
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { readSourceFixture } from "../server/source-import.ts";
@@ -70,14 +71,24 @@ assert.ok(
   ).n >= manifest.counts.rules,
 );
 
-assert.equal(
+const baseline = JSON.parse(gunzipSync(readSourceFixture()!).toString());
+assert.ok(
   (
     db
       .prepare("SELECT COUNT(*) AS n FROM source_archives WHERE kind='feature'")
       .get() as any
-  ).n,
-  manifest.counts.features + manifest.missingFeatures.length,
+  ).n >=
+    manifest.counts.features + manifest.missingFeatures.length,
 );
+for (const f of [...baseline.features, ...baseline.missingFeatures]) {
+  const id = f.kind === "param" ? 1000000000 + f.id : f.id;
+  assert.ok(
+    db
+      .prepare("SELECT 1 FROM source_archives WHERE kind='feature' AND id=?")
+      .get(id),
+    "missing original feature " + id,
+  );
+}
 assert.equal(
   (
     db

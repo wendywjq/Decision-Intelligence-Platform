@@ -268,7 +268,7 @@ export function FeatureDetailContent({ row }: { row: Row }) {
     风险域: "内容安全",
     中文名称: row.name,
     英文名称: row.enName,
-    特征说明: f.description || f.remark || "—",
+    特征说明: f.description || f.remark || f.reason || "—",
     值域管理: f.valueManageSwitch ? "是" : "否",
   };
   const fields = (v: any) => (
@@ -291,13 +291,23 @@ export function FeatureDetailContent({ row }: { row: Row }) {
   return (
     <>
       <PageHeader title="特征详情">
-        <Tag color="green">状态：{row.status}</Tag>
+        <Tag color={data?.available === false ? "orange" : "green"}>
+          状态：{row.status}
+        </Tag>
         <Button onClick={() => nav("/featureService")}>返回列表</Button>
         <Button type="primary" onClick={() => setEdit(true)}>
           编辑
         </Button>
       </PageHeader>
       {error && <Alert message={error} type="error" />}
+      {data?.available === false && (
+        <Alert
+          type="warning"
+          showIcon
+          message="来源未提供此特征定义"
+          description={f.reason || "此处保留原引用 ID，没有生成替代逻辑。"}
+        />
+      )}
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -660,7 +670,15 @@ export function FetcherPage({ id }: { id: number }) {
                 <>
                   <FetcherSummary item={data} />
                   <Section title="入参定义">
-                    <MappingTable values={data.params} />
+                    {data.params?.unavailable ? (
+                      <Alert
+                        type="warning"
+                        message="来源未提供接口入参"
+                        description={data.params.reason}
+                      />
+                    ) : (
+                      <MappingTable values={data.params} />
+                    )}
                   </Section>
                   <RawData value={data} />
                 </>
