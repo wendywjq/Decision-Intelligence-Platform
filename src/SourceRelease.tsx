@@ -1,3 +1,4 @@
+import { ExperimentConfigPage } from "./ExperimentConfig";
 import { ReleaseDetail } from "./ModulePage";
 import { useState } from "react";
 import {
@@ -194,6 +195,16 @@ export function SourceReleasePage() {
   const [create, setCreate] = useState(false);
   const active = tab;
   const [stage, setStage] = useState(0);
+  if (
+    route.endsWith("/experiment-config") ||
+    (route.endsWith("/experiment-detail") && current.data?.experimentConfig)
+  )
+    return (
+      <ExperimentConfigPage
+        id={id}
+        detail={route.endsWith("/experiment-detail")}
+      />
+    );
   if (current.data && !current.data.sourceImported)
     return (
       <>

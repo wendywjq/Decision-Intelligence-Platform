@@ -18,6 +18,7 @@
     "@xyflow/react": "^13.0.1",
     "antd": "^6.7.1",
     "better-sqlite3": "^13.2.0",
+    "dayjs": "^1.11.23",
     "express": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

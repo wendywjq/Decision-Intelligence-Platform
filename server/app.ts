@@ -1,3 +1,4 @@
+import { registerExperimentConfig } from "./experiment-config.ts";
 import { randomUUID } from "node:crypto";
 import { strategyChanges } from "./strategy-changes.ts";
 import { expandedRiskTags, riskIdsForRule } from "./risk-filter.ts";
@@ -268,6 +269,7 @@ export function createApp(db: Database.Database) {
     res.status(201).json(result.rule);
   });
   registerDetailRoutes(app, db);
+  registerExperimentConfig(app, db, save);
   app.get("/api/references/rule/:id", (req, res) => {
     const ruleId = Number(req.params.id);
     const legacy = (
