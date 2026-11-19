@@ -1,3 +1,5 @@
+import { expressionFeatureNames } from "./feature-refs.ts";
+import { groupRules, GroupRuleError } from "./group-rules.ts";
 import { listCatalogEntities } from "./catalog-list.ts";
 import { registerDetailRoutes } from "./source-details.ts";
 import express from "express";
@@ -41,22 +43,104 @@ export function createApp(db: Database.Database) {
         id,
         JSON.stringify(next),
       );
+      if (m === "rulePage") {
+        const names = [...expressionFeatureNames(next.expression)];
+        db.prepare("DELETE FROM source_feature_refs WHERE rule_id=?").run(id);
+        if (names.length)
+          for (const f of db
+            .prepare(
+              "SELECT id,data FROM entities WHERE module='featureService' AND json_extract(data,'$.enName') IN (" +
+                names.map(() => "?").join(",") +
+                ")",
+            )
+            .all(...names) as any[]) {
+            const d = JSON.parse(f.data);
+            db.prepare(
+              "INSERT OR IGNORE INTO source_feature_refs VALUES(?,?,?,?,?)",
+            ).run(
+              id,
+              f.id,
+              d.sourceId || f.id,
+              d.sourceKind || "factor",
+              d.enName,
+            );
+          }
+      }
       audit(m, id, next.name, action);
       return next;
     })();
-  registerDetailRoutes(app, db);
-  app.get("/api/references/rule/:id", (req, res) =>
+  const groups = groupRules(db);
+  app.get("/api/groups/:id/rules", (req, res) =>
     res.json({
-      items: (
-        db
-          .prepare("SELECT * FROM scene_rules WHERE rule_id=?")
-          .all(Number(req.params.id)) as any[]
-      ).map((r) => ({
-        ...r,
-        name: get(r.scene_module, r.scene_id)?.name || "—",
-      })),
+      items: groups.list(Number(req.params.id)),
+      mounts: groups.mounts(Number(req.params.id)),
     }),
   );
+  app.post("/api/groups/:id/rules", (req, res) =>
+    res.status(201).json(groups.add(Number(req.params.id), req.body)),
+  );
+  app.put("/api/groups/:id/rules/:configId", (req, res) =>
+    res.json(
+      groups.update(Number(req.params.id), req.params.configId, req.body),
+    ),
+  );
+  app.delete("/api/groups/:id/rules/:configId", (req, res) =>
+    res.json(
+      groups.update(Number(req.params.id), req.params.configId, {}, true),
+    ),
+  );
+  app.post("/api/groups/:id/create-rule", (req, res) => {
+    const parsed = bodySchema.safeParse(req.body.rule);
+    if (!parsed.success)
+      return res.status(400).json({ error: "请填写规则名称" });
+    const result = db.transaction(() => {
+      const id = Number(
+        (
+          db
+            .prepare(
+              "SELECT COALESCE(MAX(id),10000)+1 AS id FROM entities WHERE module='rulePage'",
+            )
+            .get() as any
+        ).id,
+      );
+      const rule = save(
+        "rulePage",
+        id,
+        { ...parsed.data, status: "就绪" },
+        "新建",
+      );
+      const config = groups.add(Number(req.params.id), {
+        ...req.body.config,
+        ruleId: id,
+      });
+      return { rule, config };
+    })();
+    res.status(201).json(result.rule);
+  });
+  registerDetailRoutes(app, db);
+  app.get("/api/references/rule/:id", (req, res) => {
+    const ruleId = Number(req.params.id);
+    const legacy = (
+      db
+        .prepare("SELECT * FROM scene_rules WHERE rule_id=?")
+        .all(ruleId) as any[]
+    ).map((r) => ({ ...r, id: "legacy:" + r.id }));
+    const source = (
+      db
+        .prepare("SELECT * FROM source_configs WHERE rule_id=?")
+        .all(ruleId) as any[]
+    ).map((r) => ({ ...r, ...JSON.parse(r.data) }));
+    res.json({
+      items: [...legacy, ...source].map((r) => ({
+        ...r,
+        name:
+          get(
+            r.scene_module === "graphTemplate" ? "layerScene" : r.scene_module,
+            r.scene_id,
+          )?.name || "—",
+      })),
+    });
+  });
   app.get("/api/relations", (req, res) => {
     const id = Number(req.query.id);
     res.json({
@@ -118,9 +202,11 @@ export function createApp(db: Database.Database) {
   });
   app.put("/api/source/config/:id", (req, res) => {
     const row = db
-      .prepare("SELECT data FROM source_configs WHERE id=?")
+      .prepare("SELECT * FROM source_configs WHERE id=?")
       .get(req.params.id) as any;
     if (!row) return res.status(404).json({ error: "配置不存在" });
+    if (row.scene_module === "rulesGroup")
+      return res.json(groups.update(row.scene_id, req.params.id, req.body));
     const old = JSON.parse(row.data);
     const next = {
       ...old,
@@ -454,6 +540,8 @@ export function createApp(db: Database.Database) {
     });
   });
   app.post("/api/scenes/:module/:id/rules", (req, res) => {
+    if (req.params.module === "rulesGroup")
+      return res.status(201).json(groups.add(Number(req.params.id), req.body));
     const ruleId = Number(req.body.ruleId);
     if (
       !get(req.params.module, Number(req.params.id)) ||
@@ -480,6 +568,13 @@ export function createApp(db: Database.Database) {
     }
   });
   app.put("/api/scene-rules/:id", (req, res) => {
+    const old = db
+      .prepare("SELECT * FROM scene_rules WHERE id=?")
+      .get(Number(req.params.id)) as any;
+    if (old?.scene_module === "rulesGroup")
+      return res.json(
+        groups.update(old.scene_id, "legacy-group:" + old.id, req.body),
+      );
     const result = db
       .prepare(
         "UPDATE scene_rules SET status=?,decision=?,priority=? WHERE id=?",
@@ -493,6 +588,13 @@ export function createApp(db: Database.Database) {
     res.status(result.changes ? 200 : 404).json({ ok: !!result.changes });
   });
   app.delete("/api/scene-rules/:id", (req, res) => {
+    const old = db
+      .prepare("SELECT * FROM scene_rules WHERE id=?")
+      .get(Number(req.params.id)) as any;
+    if (old?.scene_module === "rulesGroup")
+      return res.json(
+        groups.update(old.scene_id, "legacy-group:" + old.id, {}, true),
+      );
     db.prepare("DELETE FROM scene_rules WHERE id=?").run(Number(req.params.id));
     res.json({ ok: true });
   });
@@ -537,6 +639,35 @@ export function createApp(db: Database.Database) {
       res.status(400).json({ error: (e as Error).message });
     }
   });
+  app.post("/api/rule-drafts/test", (req, res) => {
+    try {
+      let input = req.body.input;
+      if (req.body.mode === "RequestId模式" || req.body.mode === "CVID模式") {
+        const field =
+          req.body.mode === "RequestId模式" ? "request_id" : "cv_id";
+        const log = db
+          .prepare(
+            "SELECT detail FROM source_request_logs WHERE " +
+              field +
+              "=? ORDER BY log_time DESC LIMIT 1",
+          )
+          .get(String(req.body.requestId || "")) as any;
+        if (!log)
+          return res.status(404).json({ error: "未找到该请求的本地日志示例" });
+        const detail = JSON.parse(log.detail);
+        input =
+          detail.paramContext || detail.featureValues || detail.input || {};
+      }
+      if (typeof input === "string") input = JSON.parse(input);
+      if (!input || typeof input !== "object" || Array.isArray(input))
+        throw Error("请输入JSON对象");
+      const actual = evaluateExpression(req.body.expression, input),
+        expected = req.body.expected !== false;
+      return res.json({ input, actual, expected, passed: actual === expected });
+    } catch (e: any) {
+      return res.status(400).json({ error: e.message });
+    }
+  });
   app.post("/api/evaluate", (req, res) => {
     try {
       return res.json({
@@ -571,6 +702,26 @@ export function createApp(db: Database.Database) {
     const action = req.body.action;
     let next = { ...row };
     if (action === "中止" || action === "回滚") {
+      if (action === "回滚" && row.groupChangesApplied)
+        return res.json(
+          db.transaction(() => {
+            for (const snapshot of [
+              ...(row.groupChangeSnapshots || []),
+            ].reverse())
+              groups.rollback(snapshot);
+            return save(
+              "release/list",
+              row.id,
+              {
+                ...row,
+                status: "已回滚",
+                stopTime: new Date().toISOString(),
+                groupChangesApplied: false,
+              },
+              action,
+            );
+          })(),
+        );
       next.status = "已" + action;
       next.stopTime = new Date().toISOString();
     } else if (action === "实验") {
@@ -592,10 +743,32 @@ export function createApp(db: Database.Database) {
       next.status = next.progress === 100 ? "已完成" : "灰度中";
       if (next.progress === 100) next.phase = phases[3];
     } else return res.status(400).json({ error: "未知操作" });
+    if (
+      next.phase === "完成" &&
+      !row.groupChangesApplied &&
+      row.localChanges?.some((c: any) => c.objectType === "规则组策略")
+    ) {
+      return res.json(
+        db.transaction(() => {
+          const groupChangeSnapshots = row.localChanges
+            .filter((c: any) => c.objectType === "规则组策略")
+            .map((c: any) => groups.publish(c));
+          return save(
+            "release/list",
+            row.id,
+            { ...next, groupChangesApplied: true, groupChangeSnapshots },
+            action,
+          );
+        })(),
+      );
+    }
     return res.json(save("release/list", row.id, next, action));
   });
   app.use((err: any, _req: any, res: any, _next: any) =>
-    res.status(500).json({ error: err.message || "服务异常" }),
+    res.status(err instanceof GroupRuleError ? err.status : 500).json({
+      error: err.message || "服务异常",
+      ...(err instanceof GroupRuleError ? err.details : {}),
+    }),
   );
   return app;
 }

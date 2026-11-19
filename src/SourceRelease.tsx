@@ -161,7 +161,11 @@ export function ReleaseCreator({
         {copy && (
           <Alert
             type="info"
-            message={`将复制任务 ${copy.id} 的变更内容到新的本地任务。`}
+            message={
+              copy.id
+                ? `将复制任务 ${copy.id} 的变更内容到新的本地任务。`
+                : "将所选策略调整保存到变更任务，发布完成后应用。"
+            }
           />
         )}
         <p className="muted">

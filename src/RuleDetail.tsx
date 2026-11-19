@@ -36,7 +36,7 @@ export function RuleDetail() {
   } = useRemote<any>(entityPath("rulePage", id));
   const tests = useRemote<{ items: any[] }>("/rules/" + id + "/tests");
   const features = useRemote<{ items: any[] }>(
-    "/entities/featureService?pageSize=100",
+    "/source/rules/" + id + "/features",
   );
   const [tab, setTab] = useState("基本信息");
   const [display, setDisplay] = useState("交互式");
@@ -132,7 +132,7 @@ export function RuleDetail() {
         >
           返回
         </Button>
-        <Tag color="green">已生效</Tag>
+        <Tag color="green">{rule.status || "就绪"}</Tag>
       </div>
       <Tabs
         activeKey={tab}
@@ -341,7 +341,15 @@ export function RuleDetail() {
             </Button>
           </Section>
           <Section title="风险标签">
-            <Tag>风险识别</Tag>
+            {rule.riskTags?.length ? (
+              rule.riskTags.map((tag: any) => (
+                <Tag key={typeof tag === "object" ? tag.id : tag}>
+                  {typeof tag === "object" ? tag.name : String(tag)}
+                </Tag>
+              ))
+            ) : (
+              <span className="muted">暂无</span>
+            )}
           </Section>
           <Section title="生态事实标签">
             <span className="muted">暂无</span>

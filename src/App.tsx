@@ -1,3 +1,4 @@
+import { RuleWizardPage } from "./RuleWizard";
 import { FusePage } from "./FusePage";
 import { StrategyLogs, StrategyLogDetail } from "./StrategyLogs";
 import { FetcherPage } from "./SourceSecondary";
@@ -231,6 +232,7 @@ export default function App() {
           ))}
           <Route path="/rulesFuseAdd" element={<FusePage />} />
           <Route path="/ruleDetails" element={<RuleDetail />} />
+          <Route path="/addRulePage" element={<RuleWizardPage />} />
           <Route
             path="/help"
             element={

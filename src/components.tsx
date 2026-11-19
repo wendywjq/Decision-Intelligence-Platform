@@ -1,3 +1,4 @@
+import { RuleWizard } from "./RuleWizard";
 import { useEffect, useState } from "react";
 import {
   App,
@@ -57,7 +58,7 @@ export function FieldControl({
     />
   );
 }
-export function EntityEditor({
+function BasicEntityEditor({
   module,
   row,
   open,
@@ -213,4 +214,16 @@ export function useRemote<T>(path: string, deps: any[] = []) {
     };
   }, [path, version, ...deps]);
   return { data, error, loading, reload: () => setVersion((v) => v + 1) };
+}
+
+export function EntityEditor(props: Parameters<typeof BasicEntityEditor>[0]) {
+  return props.module.kind === "rule" && !props.row ? (
+    <RuleWizard
+      open={props.open}
+      onClose={props.onClose}
+      onSaved={props.onSaved}
+    />
+  ) : (
+    <BasicEntityEditor {...props} />
+  );
 }

@@ -1,3 +1,4 @@
+import { GroupRules } from "./GroupRules";
 import { GraphInfoEditor } from "./SourceSecondary";
 import { GraphVersionDrawer } from "./GraphVersions";
 import { formatDate } from "./date";
@@ -398,6 +399,10 @@ export function ModulePage({ module: m }: { module: Module }) {
                 setReleaseCreate(true);
                 return;
               }
+              if (m.kind === "rule") {
+                nav("/addRulePage");
+                return;
+              }
               setEdit(undefined);
               setEditor(true);
             }}
@@ -573,7 +578,9 @@ export function ModulePage({ module: m }: { module: Module }) {
             m.kind === "scene"
               ? {
                   expandedRowRender: (r) =>
-                    r.sourceImported ? (
+                    m.key === "rulesGroup" ? (
+                      <GroupRules id={r.id} />
+                    ) : r.sourceImported ? (
                       <ImportedSceneRules module={m.key} id={r.id} />
                     ) : (
                       <SceneRules module={m.key} id={r.id} />
@@ -764,19 +771,65 @@ function ReleaseDetail({
             key: "content",
             label: "变更内容",
             children: (
-              <Descriptions
-                bordered
-                items={[
-                  { key: "name", label: "变更名称", children: row.name },
-                  { key: "mode", label: "变更模式", children: row.type },
-                  { key: "phase", label: "当前阶段", children: row.phase },
-                  {
-                    key: "description",
-                    label: "变更说明",
-                    children: row.description,
-                  },
-                ]}
-              />
+              <>
+                <Descriptions
+                  bordered
+                  items={[
+                    { key: "name", label: "变更名称", children: row.name },
+                    { key: "mode", label: "变更模式", children: row.type },
+                    { key: "phase", label: "当前阶段", children: row.phase },
+                    {
+                      key: "description",
+                      label: "变更说明",
+                      children: row.description,
+                    },
+                  ]}
+                />
+                {!!row.localChanges?.length && (
+                  <Table<any>
+                    style={{ marginTop: 20 }}
+                    rowKey={(_, i) => String(i)}
+                    pagination={false}
+                    dataSource={row.localChanges}
+                    columns={[
+                      { title: "对象", dataIndex: "objectType" },
+                      { title: "规则组ID", dataIndex: "groupId" },
+                      { title: "规则ID", dataIndex: "ruleId" },
+                      { title: "操作", dataIndex: "action" },
+                      {
+                        title: "变更前",
+                        render: (_, c) => (
+                          <Space direction="vertical">
+                            <span>状态：{c.before?.status}</span>
+                            <span>
+                              决策：{c.before?.decision || c.before?.decisionId}
+                            </span>
+                            <span>优先级：{c.before?.priority}</span>
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: "变更后",
+                        render: (_, c) =>
+                          c.action === "删除" ? (
+                            "删除该配置"
+                          ) : (
+                            <Space direction="vertical">
+                              <span>状态：{c.after?.status ?? "不变"}</span>
+                              <span>
+                                决策：
+                                {c.after?.decisionId
+                                  ? `决策ID ${c.after.decisionId}`
+                                  : c.after?.decision || "不变"}
+                              </span>
+                              <span>优先级：{c.after?.priority ?? "不变"}</span>
+                            </Space>
+                          ),
+                      },
+                    ]}
+                  />
+                )}
+              </>
             ),
           },
           {
