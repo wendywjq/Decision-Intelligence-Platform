@@ -54,6 +54,22 @@ export function importFullCatalogSnapshot(
   snapshot: any,
   digest = "manual-full",
 ) {
+  if (snapshot.featureScope === "all") {
+    for (const [kind, total] of Object.entries(
+      snapshot.featureCatalogCounts || {},
+    )) {
+      const ids = snapshot.features
+        .filter((f: any) => f.kind === kind)
+        .map((f: any) => f.id);
+      if (ids.length !== total || new Set(ids).size !== total)
+        throw Error("全量特征目录不完整：" + kind);
+    }
+    if (
+      !snapshot.featureCatalogCounts?.factor ||
+      !snapshot.featureCatalogCounts?.param
+    )
+      throw Error("全量特征目录缺少来源计数");
+  }
   db.transaction(() => {
     importSourceSnapshot(db, snapshot, digest, {
       additive: true,

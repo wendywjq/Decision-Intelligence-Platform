@@ -455,3 +455,33 @@ test("expression-only rules link catalog variables while quoted values, comments
   );
   db.close();
 });
+
+test("full feature import rejects missing or duplicate catalog entries before writing", async () => {
+  const { importFullCatalogSnapshot } =
+    await import("../server/full-catalog.ts");
+  const db = openDatabase(":memory:");
+  const before = db.prepare("SELECT COUNT(*) AS count FROM entities").get();
+  const factor = {
+    id: 990001,
+    kind: "factor",
+    detail: { id: 990001, name: "all_feature" },
+  };
+  for (const features of [[factor], [factor, factor]]) {
+    assert.throws(
+      () =>
+        importFullCatalogSnapshot(db, {
+          featureScope: "all",
+          featureCatalogCounts: { factor: 2, param: 1 },
+          features,
+          rules: [],
+          capturedAt: "2026-11-18",
+        }),
+      /全量特征目录不完整/,
+    );
+    assert.deepEqual(
+      db.prepare("SELECT COUNT(*) AS count FROM entities").get(),
+      before,
+    );
+  }
+  db.close();
+});

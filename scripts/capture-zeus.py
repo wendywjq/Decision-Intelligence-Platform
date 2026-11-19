@@ -22,6 +22,7 @@ def get(path, params, key=None, refresh=False, attempt=0):
   fcntl.flock(clock,fcntl.LOCK_UN)
  r=subprocess.run(['bash',str(AUTH),'prod-cn',url,'--max-time','90','-H','M-APPKEY: fe_zeus','-H','zeus: true','-w','\nZEUS_HTTP_STATUS:%{http_code}'],capture_output=True,text=True,timeout=100)
  body,_,status=r.stdout.rpartition('\nZEUS_HTTP_STATUS:')
+ status=status.strip()
  if r.returncode:
   if r.returncode in [5,6,7,18,28,35,52,55,56] and attempt<3:
    print("Network interruption, curl exit",r.returncode,"cooldown",30*(attempt+1),"seconds",file=sys.stderr,flush=True)

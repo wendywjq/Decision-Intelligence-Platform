@@ -2,10 +2,16 @@
   "schemaVersion": 1,
   "businessCode": 35,
   "capturedAt": "2026-11-18T04:10:56.413341+00:00",
-  "interfacesCapturedAt": "2026-11-18T04:38:27.936275+00:00",
+  "interfacesCapturedAt": "2026-11-19T04:41:55.500357+00:00",
   "startedAt": "2026-11-18T03:26:06.945863+00:00",
   "sourceTotal": 28583,
-  "sha256": "745ed694a0b688162f244dbe521480598333316166470830cc206339ba96c3a1",
+  "featureScope": "all",
+  "featureCatalogCounts": {
+    "factor": 43478,
+    "param": 18177
+  },
+  "featuresExpandedAt": "2026-11-18T05:29:33.322281+00:00",
+  "sha256": "ae263d7cf9567226ef54f41bf536b262e55e36a9a409d484ac0dfa313b8354ab",
   "parts": [
     {
       "path": "fixtures/zeus-full-catalog/part-000.bin",
@@ -260,75 +266,245 @@
     {
       "path": "fixtures/zeus-full-catalog/part-050.bin",
       "size": 262144,
-      "sha256": "1c3b44fd4b1b9a6ad157d145a8efa2a83674d46c3d169d7c198021959f79152b"
+      "sha256": "7a8cb220094c17c08c0a1e8118cfc66f5fa3554579b1cc57834eb0ba0e7e8879"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-051.bin",
       "size": 262144,
-      "sha256": "3bf755a1bbb0689e99af14c5c89e977c1adaaf00e18721d419da7cacaa51cbf7"
+      "sha256": "df348af0755fb20b91525edc33ef517ab5f60df15aed80e2cfae99998137bbd5"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-052.bin",
       "size": 262144,
-      "sha256": "086cf5991a2a2fff721df4ae3bab08f9e6e1617e0e9e4d6c364c998eedce3900"
+      "sha256": "a6f7f2c93ad8868a58735f21af482a3bbf002f14a1997d5b760757c6115ada52"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-053.bin",
       "size": 262144,
-      "sha256": "b34d233a8855c11965f6cc6767a141819efbc6800d1ae25a8d93a060c37811c3"
+      "sha256": "eaed556d625a0e88327e811ef0b4f865588bbb33d561f11eb75d3b1efd65f441"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-054.bin",
       "size": 262144,
-      "sha256": "e35d1e45176f6246beaef0b24224d2d3c4afeb2a8e6c7df59667f0a178384023"
+      "sha256": "57f474d7dc57393d805b783c3c4df553e24b5a19074d5141706a375c01a70e90"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-055.bin",
       "size": 262144,
-      "sha256": "0bcb7b75d0a492cf8555628b3e3532125bd97b77d27f0fbceb19c847a732e0cc"
+      "sha256": "efcf2dff4f329869c43843a8713c4d1981b7116de5dd9b89cbf04ea35e6759c0"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-056.bin",
       "size": 262144,
-      "sha256": "6976d8e3c04b17e8218954afe58bf34019f3260e70ef6bfbf251597f67ae69c1"
+      "sha256": "e252c0a54b1ab26f4ad4f3d97149d148cd283bfc95e31b069e8b79abe36e409f"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-057.bin",
       "size": 262144,
-      "sha256": "508f33b96b7db45670861a52c67ed129e3c2abf0effec16010f45406e9aa46a5"
+      "sha256": "a974bba762d0ea7d4b52408a923d3219e4f0bdf6c4accaf08a00fd32429f3333"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-058.bin",
       "size": 262144,
-      "sha256": "5c12af05dda112486c61c7172611aa3480fc01218927ca412b919f9d46965889"
+      "sha256": "c5b9bbb585df7820044a305d56b59fbd808ed82c76f228f25bb57d46668c5040"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-059.bin",
       "size": 262144,
-      "sha256": "08f445c95714c756905910aa353a1dd343b95ac5552d8d1fe0499d862ee5fe14"
+      "sha256": "c0ad25a3f7f9ed71d254d894bdc67a83c0cb55887aaaa5ab293c08c1c9749507"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-060.bin",
       "size": 262144,
-      "sha256": "9ad9cf4c328d3b72b4da56097750c4730adbb07300026e64fabe683bc656b752"
+      "sha256": "0a47750cee8309589f95ff3628faaab7f3f60da92d979deaf162ad1f526bb2c4"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-061.bin",
       "size": 262144,
-      "sha256": "bbb895837053f0e1520ca9d3aa9530018689ef1acd6671c595103e586b626860"
+      "sha256": "db1b6a5482fb15938a68d7353886a3161af12fc1d24f4e8683c72fdfab2fd025"
     },
     {
       "path": "fixtures/zeus-full-catalog/part-062.bin",
-      "size": 108798,
-      "sha256": "2987d483d73f8522e460c252192e17876ce54f166639fe0275e4b9dc7073a117"
+      "size": 262144,
+      "sha256": "6551e6bdf0b988aa73d6be6709d0978cd002bdab2d283b7460c63d6d83129fa4"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-063.bin",
+      "size": 262144,
+      "sha256": "b89058eb88b994946d7f9783b61d48ffcb579308c261d794623495aa80550bbb"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-064.bin",
+      "size": 262144,
+      "sha256": "1deae062eb6257ae1c05053e268d357d13548fa2acc8e2dcb4d6d3976d2e0788"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-065.bin",
+      "size": 262144,
+      "sha256": "1c6b070bf0a2dcf87efbd6ad326b724ded07eab3de19d3d0a4219b98535a620b"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-066.bin",
+      "size": 262144,
+      "sha256": "50ac929054ea7f72bd431f98b5890cebaed1a8bb3394f7c9b8e31fc2d925d58a"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-067.bin",
+      "size": 262144,
+      "sha256": "3c9ffca34516892319ef5fe5972be6a9863d8a49b6f41b818000d9c8582c992a"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-068.bin",
+      "size": 262144,
+      "sha256": "c77245ec31903ae55f8100059539cc30c1be00d56ac5bfbe6fed64536a0cd04a"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-069.bin",
+      "size": 262144,
+      "sha256": "7c849b75f15435f4f207768256479b29b0a3a918ae7c742b01deab58bdfab281"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-070.bin",
+      "size": 262144,
+      "sha256": "f51b24e54b8864e41c4c4eb682e8d0b34529d9fdd54c618a3ac4285fe0b136b7"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-071.bin",
+      "size": 262144,
+      "sha256": "4bb3a305ade172d6446ceda24d184646fbe3edfdad3fe49e5b5c25ba77e6f95d"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-072.bin",
+      "size": 262144,
+      "sha256": "20f6667ec8e7e47dac8e64cb48e6eb523cecd6aee30fe0a829aee631a270b2f6"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-073.bin",
+      "size": 262144,
+      "sha256": "3df4d0dba0cb2453cdd8a3be9ba09dbe8d4faa83429e52d5213f933224aa5bd9"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-074.bin",
+      "size": 262144,
+      "sha256": "50be06be7c8d56c6f7896047a2e059734d10f6bbdd4f819d642f8fd758363653"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-075.bin",
+      "size": 262144,
+      "sha256": "a07a7ba1e8c5c861e59facf68d837ac020e2e54e332a8ff5c37df57310822d32"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-076.bin",
+      "size": 262144,
+      "sha256": "3310390dd62d3627116954d975b0608f906d47ba4ecb551446a1a0f047007fdd"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-077.bin",
+      "size": 262144,
+      "sha256": "df277eb4746d52326f087d6955aa31f29fc30037a202a1b0df64291225a48769"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-078.bin",
+      "size": 262144,
+      "sha256": "1d43a61aebd9b9ff438bb952eef4bf8d06cc446df8ba1f76f8140d0987672fa5"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-079.bin",
+      "size": 262144,
+      "sha256": "39afb09a3c5911d3616d94ce1e5b428b5b8775b1a0c6fab526a27eab93542f75"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-080.bin",
+      "size": 262144,
+      "sha256": "fda00aad2ea5251d0cc9a983f5a1f1dd88c3820184f581cc0c91391bbae5a591"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-081.bin",
+      "size": 262144,
+      "sha256": "ca115b583127631acb1f2be04f51abeb1b21c2bc81a95b29975f5c40b091e360"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-082.bin",
+      "size": 262144,
+      "sha256": "98ec1410adf6a9a49cfe0a91260b06e548e02ea986cee5c11036e6272ef472a7"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-083.bin",
+      "size": 262144,
+      "sha256": "f51af3d1f8776178639ed12b892ceb45ffe4492322372c0e149190cdaff17c80"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-084.bin",
+      "size": 262144,
+      "sha256": "573133da93b4dc45ac4b710f6914617beb9635374267145e4c84c0596f6ad5e8"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-085.bin",
+      "size": 262144,
+      "sha256": "3b807d8544a5ca3a02dd600b36e570b925fd3e4ab3ad39da69eb324e3b57d0a9"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-086.bin",
+      "size": 262144,
+      "sha256": "0b1b1efdae27d6ea9b57adfe01b50e95fdac8624f6e6666a533e4d1c038209c4"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-087.bin",
+      "size": 262144,
+      "sha256": "01aeaaa16f6f1bc0974a994fafe31f0ec2ba51e63ea819bdbdef20fb65d9da22"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-088.bin",
+      "size": 262144,
+      "sha256": "8da14abd003c5f84d017a442951ee27a84824b12f5a569292dafa2167ef1ea46"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-089.bin",
+      "size": 262144,
+      "sha256": "ba7f936a96e416b035f8b3dd95b984c3cd39a36ccf3b640a81dbc7c743c4cafb"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-090.bin",
+      "size": 262144,
+      "sha256": "129ef80f5cc9387381bd12375421fb498da2e85508ea4fa2ad3a2e97bfe8ecab"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-091.bin",
+      "size": 262144,
+      "sha256": "b3f3806e99e6a83ded0859963771100ab61360742dda318243d171605324b088"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-092.bin",
+      "size": 262144,
+      "sha256": "3ab24b823bd68454373eb1e9276321245f6d20365aa56d4fbdbac25d1acd321c"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-093.bin",
+      "size": 262144,
+      "sha256": "0142a709562c904171a7aaceacccc1bf429d8aa704f58cd801e5cfafec1ceb05"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-094.bin",
+      "size": 262144,
+      "sha256": "8f3c0101fd39cace5e682762548a79a69d1bc6e436486b416704ecfc8dfb5949"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-095.bin",
+      "size": 262144,
+      "sha256": "ae8fcf9acfa37963acaee76cef125f70be24e2dbf25b5e628fed7288767dffb5"
+    },
+    {
+      "path": "fixtures/zeus-full-catalog/part-096.bin",
+      "size": 3425,
+      "sha256": "e53a057abec7499012e4dd39f5e85bb3cef766d14a8e732048e1a3098b4ffed4"
     }
   ],
   "counts": {
     "rules": 28583,
-    "features": 19732,
+    "features": 61655,
     "unavailableFeatures": 141,
-    "dependencies": 1157,
-    "fetchers": 848
+    "dependencies": 6583,
+    "fetchers": 4602
   },
   "missingRuleDefinitions": [],
   "unavailableFeatures": [

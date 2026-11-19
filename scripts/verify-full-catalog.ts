@@ -14,6 +14,20 @@ assert.equal(
 );
 assert.ok(snapshot.rules.length >= snapshot.sourceTotal);
 assert.deepEqual(snapshot.missingRuleDefinitions, []);
+if (snapshot.featureScope === "all") {
+  assert.deepEqual(
+    snapshot.featureCatalogCounts,
+    fixture.manifest.featureCatalogCounts,
+  );
+  assert.equal(snapshot.featureScope, fixture.manifest.featureScope);
+  for (const [kind, total] of Object.entries(snapshot.featureCatalogCounts)) {
+    const ids = snapshot.features
+      .filter((f: any) => f.kind === kind)
+      .map((f: any) => f.id);
+    assert.equal(ids.length, total);
+    assert.equal(new Set(ids).size, total);
+  }
+}
 const db = openDatabase();
 const report = JSON.parse(
   (
@@ -23,6 +37,7 @@ const report = JSON.parse(
   ).value,
 );
 const protectedRules = new Set(report.protectedRules || []);
+const protectedFeatures = new Set(report.protectedFeatures || []);
 const entity = db.prepare("SELECT data FROM entities WHERE module=? AND id=?");
 const archive = db.prepare(
   "SELECT data FROM source_archives WHERE kind=? AND id=? AND version=''",
@@ -56,8 +71,15 @@ for (const r of snapshot.rules) {
 }
 for (const f of snapshot.features) {
   const id = f.kind === "param" ? 1000000000 + f.id : f.id;
+  if (protectedFeatures.has(id)) continue;
   assert.ok(entity.get("featureService", id), "缺特征 " + f.kind + ":" + f.id);
-  assert.ok(archive.get("feature", id), "缺特征定义 " + id);
+  const raw = archive.get("feature", id) as any;
+  assert.ok(raw, "缺特征定义 " + id);
+  assert.deepEqual(
+    JSON.parse(raw.data).detail,
+    f.detail,
+    "特征定义不一致 " + id,
+  );
 }
 for (const feature of snapshot.missingFeatures || []) {
   const id = feature.kind === "param" ? 1000000000 + feature.id : feature.id;
@@ -95,6 +117,7 @@ console.log(
       missingTypedFeatures: snapshot.missingTypedFeatures.length,
       unresolvedFeatureNames: snapshot.unresolvedFeatureNames.length,
       protectedLocalRules: protectedRules.size,
+      protectedLocalFeatures: protectedFeatures.size,
     },
     null,
     2,

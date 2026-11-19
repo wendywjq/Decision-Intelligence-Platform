@@ -8,6 +8,11 @@ snapshot=json.loads((source/'snapshot.json').read_text())
 interfaces_path=source/'interfaces-progress.json'
 if not interfaces_path.exists() or json.loads(interfaces_path.read_text())['status']!='complete':raise SystemExit('RPC interface closure is not complete')
 snapshot['interfacesCapturedAt']=json.loads(interfaces_path.read_text())['updatedAt']
+if snapshot.get('featureScope')=='all':
+ counts=snapshot['featureCatalogCounts']
+ for kind,total in counts.items():
+  actual=[f['id'] for f in snapshot['features'] if f['kind']==kind]
+  assert len(actual)==len(set(actual))==total, 'Incomplete '+kind+' catalog'
 ids=[r['id'] for r in snapshot['rules']]
 assert len(ids)==len(set(ids))==snapshot['indexedRuleCount']
 assert len(ids)>=snapshot['sourceTotal']
@@ -32,6 +37,6 @@ for offset in range(0,len(payload),256*1024):
  parts.append({'path':str(path.relative_to(root)),'size':len(value),'sha256':hashlib.sha256(value).hexdigest()})
 for path in out.glob('part-*.bin'):
  if str(path.relative_to(root)) not in {p['path'] for p in parts}:path.unlink()
-manifest={'schemaVersion':1,'businessCode':35,'capturedAt':snapshot['capturedAt'],'interfacesCapturedAt':snapshot['interfacesCapturedAt'],'startedAt':progress['startedAt'],'sourceTotal':snapshot['sourceTotal'],'sha256':hashlib.sha256(payload).hexdigest(),'parts':parts,'counts':{'rules':len(ids),'features':len(snapshot['features']),'unavailableFeatures':len(snapshot.get('missingFeatures',[])),'dependencies':len(snapshot.get('dependencies',[])),'fetchers':len(snapshot.get('fetchers',[]))},'missingRuleDefinitions':snapshot['missingRuleDefinitions'],'unavailableFeatures':[{'id':f['id'],'kind':f['kind'],'reason':f['detail'].get('reason'),'referenceNames':f.get('referenceNames',[])} for f in snapshot.get('missingFeatures',[])],'missingTypedFeatures':snapshot['missingTypedFeatures'],'unavailableInterfaces':snapshot.get('unavailableInterfaces',[]),'unresolvedFeatureNames':snapshot['unresolvedFeatureNames'],'requestPolicy':{'concurrency':1,'minimumIdleSeconds':1,'rateLimitCooldownSeconds':60,'resumable':True}}
+manifest={'schemaVersion':1,'businessCode':35,'capturedAt':snapshot['capturedAt'],'interfacesCapturedAt':snapshot['interfacesCapturedAt'],'startedAt':progress['startedAt'],'sourceTotal':snapshot['sourceTotal'],'featureScope':snapshot.get('featureScope','rule-closure'),'featureCatalogCounts':snapshot.get('featureCatalogCounts'),'featuresExpandedAt':snapshot.get('featuresExpandedAt'),'sha256':hashlib.sha256(payload).hexdigest(),'parts':parts,'counts':{'rules':len(ids),'features':len(snapshot['features']),'unavailableFeatures':len(snapshot.get('missingFeatures',[])),'dependencies':len(snapshot.get('dependencies',[])),'fetchers':len(snapshot.get('fetchers',[]))},'missingRuleDefinitions':snapshot['missingRuleDefinitions'],'unavailableFeatures':[{'id':f['id'],'kind':f['kind'],'reason':f['detail'].get('reason'),'referenceNames':f.get('referenceNames',[])} for f in snapshot.get('missingFeatures',[])],'missingTypedFeatures':snapshot['missingTypedFeatures'],'unavailableInterfaces':snapshot.get('unavailableInterfaces',[]),'unresolvedFeatureNames':snapshot['unresolvedFeatureNames'],'requestPolicy':{'concurrency':1,'minimumIdleSeconds':1,'rateLimitCooldownSeconds':60,'resumable':True}}
 (root/'fixtures/zeus-full-catalog-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
 print(json.dumps({'counts':manifest['counts'],'bytes':len(payload),'parts':len(parts),'unresolved':len(snapshot['unresolvedFeatureNames'])},ensure_ascii=False))

@@ -72,6 +72,7 @@ export function importSourceSnapshot(
       protectedRows.delete(module + ":" + id);
   };
   const protectedRules: number[] = [];
+  const protectedFeatures: number[] = [];
 
   const iso = (v: any) =>
     typeof v === "number" ? new Date(v < 1e12 ? v * 1000 : v).toISOString() : v;
@@ -207,6 +208,7 @@ export function importSourceSnapshot(
       const param = f.kind === "param";
       const id = param ? 1000000000 + Number(f.id) : Number(f.id);
       allowNewSource("featureService", id, d.addtime);
+      if (protectedRows.has("featureService:" + id)) protectedFeatures.push(id);
       const name = d.name || f.reference?.value || "";
       featureNames.set(name, { ...f, entityId: id });
       for (const alias of f.referenceNames || [])
@@ -521,9 +523,13 @@ export function importSourceSnapshot(
     const report = {
       capturedAt: captured,
       sourceTotal: snapshot.sourceTotal,
+      featureScope: snapshot.featureScope,
+      featureCatalogCounts: snapshot.featureCatalogCounts,
+      featuresExpandedAt: snapshot.featuresExpandedAt,
       interfacesCapturedAt: snapshot.interfacesCapturedAt,
       indexedRuleCount: snapshot.indexedRuleCount,
       protectedRules,
+      protectedFeatures,
       detailCounts: {
         dependencies: snapshot.dependencies?.length || 0,
         fetchers: snapshot.fetchers?.length || 0,

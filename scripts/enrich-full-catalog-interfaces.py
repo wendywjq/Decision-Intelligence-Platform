@@ -19,7 +19,7 @@ def read(endpoint,id,key):
  try:value=c.get(endpoint,{'id':id},'full-interfaces-'+key)['data']
  except RuntimeError as error:
   try:info=ast.literal_eval(str(error))
-  except(ValueError,SyntaxError):raise
+  except(ValueError,SyntaxError):raise error
   desc=str(info.get('desc')or info.get('message')or'').lower()
   if not any(s in desc for s in ['不存在','未找到','未查询到','not found']):raise
   value={'unavailable':True,'id':id,'reason':desc}

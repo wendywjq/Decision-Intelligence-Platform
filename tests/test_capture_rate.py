@@ -15,7 +15,7 @@ class CapturePolicyTests(unittest.TestCase):
   self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
   self.c.CACHE=pathlib.Path(self.temp.name)/'responses';self.c.CACHE.mkdir()
  def response(self,code=200,data=None,exit=0):
-  return types.SimpleNamespace(returncode=exit,stderr='',stdout=json.dumps(data or {'code':0,'data':{'ok':True}})+'\nZEUS_HTTP_STATUS:'+str(code))
+  return types.SimpleNamespace(returncode=exit,stderr='',stdout=json.dumps(data or {'code':0,'data':{'ok':True}})+'\nZEUS_HTTP_STATUS:'+str(code)+'\n')
  def test_cached_response_never_calls_platform(self):
   (self.c.CACHE/'cached.json').write_text(json.dumps({'code':0,'data':{'id':1}}))
   with patch.object(self.c.subprocess,'run') as call:
@@ -27,6 +27,13 @@ class CapturePolicyTests(unittest.TestCase):
    self.assertEqual(call.call_count,2)
    self.assertIn(unittest.mock.call(60),sleep.call_args_list)
    self.assertTrue((self.c.CACHE/'limited.json').exists())
+ def test_gateway_html_with_wrapper_newline_uses_cooldown(self):
+  gateway=types.SimpleNamespace(returncode=0,stderr='',stdout='<html><h1>504 Gateway Time-out</h1></html>\nZEUS_HTTP_STATUS:504\n')
+  with patch.object(self.c.subprocess,'run',side_effect=[gateway,self.response()]) as call,patch.object(self.c.time,'sleep') as sleep:
+   self.c.get('fetcher_param/get_list_by_fetcher_id',{'id':123},'gateway')
+   self.assertEqual(call.call_count,2)
+   self.assertIn(unittest.mock.call(60),sleep.call_args_list)
+   self.assertEqual(json.loads((self.c.CACHE/'gateway.json').read_text())['code'],0)
  def test_expired_auth_stops_without_retry_or_cache(self):
   with patch.object(self.c.subprocess,'run',return_value=self.response(302)) as call:
    with self.assertRaisesRegex(RuntimeError,'authentication'):self.c.get('rule/search_new',{},'expired')
