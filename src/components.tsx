@@ -1,3 +1,9 @@
+import { RiskTagSelect } from "./RiskTagSelect";
+import {
+  CHANGE_EVENT,
+  useChangeTaskId,
+  requestChangeEnvironment,
+} from "./change-context";
 import { RuleWizard } from "./RuleWizard";
 import { useEffect, useState } from "react";
 import {
@@ -129,6 +135,11 @@ function BasicEntityEditor({
         wrapperCol={{ span: 18 }}
         className="entity-form"
       >
+        {module.kind === "rule" && (
+          <Form.Item name="riskTags" label="风险标签">
+            <RiskTagSelect />
+          </Form.Item>
+        )}
         {module.fields.map((f) => (
           <Form.Item
             key={f.key}
@@ -186,6 +197,15 @@ export function useRemote<T>(path: string, deps: any[] = []) {
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
   useEffect(() => {
+    const change = () => setVersion((v) => v + 1);
+    window.addEventListener(CHANGE_EVENT, change);
+    window.addEventListener("hashchange", change);
+    return () => {
+      window.removeEventListener(CHANGE_EVENT, change);
+      window.removeEventListener("hashchange", change);
+    };
+  }, []);
+  useEffect(() => {
     let current = true;
     if (!path) {
       setLoading(false);
@@ -217,13 +237,41 @@ export function useRemote<T>(path: string, deps: any[] = []) {
 }
 
 export function EntityEditor(props: Parameters<typeof BasicEntityEditor>[0]) {
-  return props.module.kind === "rule" && !props.row ? (
-    <RuleWizard
-      open={props.open}
-      onClose={props.onClose}
-      onSaved={props.onSaved}
-    />
-  ) : (
-    <BasicEntityEditor {...props} />
+  const taskId = useChangeTaskId();
+  const stats = useRemote<any>(
+    props.module.kind === "rule" && props.row
+      ? "/rules/" + props.row.id + "/stats"
+      : "",
   );
+  const preview = useRemote<any>(
+    taskId && props.module.kind === "rule" && props.row
+      ? entityPath("rulePage", props.row.id)
+      : "",
+  );
+  useEffect(() => {
+    if (
+      props.open &&
+      props.row &&
+      props.module.kind === "rule" &&
+      stats.data?.effective &&
+      !taskId
+    )
+      requestChangeEnvironment({ onCancel: props.onClose });
+  }, [props.open, props.row?.id, stats.data?.effective, taskId]);
+  if (props.module.kind === "rule" && !props.row)
+    return (
+      <RuleWizard
+        open={props.open}
+        onClose={props.onClose}
+        onSaved={props.onSaved}
+      />
+    );
+  if (
+    props.module.kind === "rule" &&
+    props.row &&
+    !taskId &&
+    (stats.loading || stats.data?.effective)
+  )
+    return null;
+  return <BasicEntityEditor {...props} row={preview.data || props.row} />;
 }

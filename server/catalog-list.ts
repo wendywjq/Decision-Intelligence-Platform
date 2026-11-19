@@ -1,3 +1,5 @@
+import { expandedRiskTags } from "./risk-filter.ts";
+import { ruleStats } from "./rule-policy.ts";
 import type Database from "better-sqlite3";
 import { moduleMap } from "../src/catalog.ts";
 /** Filter/count in SQLite and decode only the requested page of large catalogs. */
@@ -5,23 +7,59 @@ export function listCatalogEntities(
   db: Database.Database,
   module: string,
   query: Record<string, unknown>,
+  overrides?: Map<number, any>,
 ) {
+  let prefix = "",
+    from = "entities";
+  const previewValues: any[] = [];
+  if (overrides?.size) {
+    prefix =
+      "WITH preview(module,id,data) AS (VALUES " +
+      [...overrides]
+        .map(([id, e]) => {
+          previewValues.push(module, id, JSON.stringify(e));
+          return "(?,?,?)";
+        })
+        .join(",") +
+      "), catalog AS (SELECT e.module,e.id,COALESCE(p.data,e.data) data FROM entities e LEFT JOIN preview p ON p.module=e.module AND p.id=e.id UNION ALL SELECT p.module,p.id,p.data FROM preview p WHERE NOT EXISTS(SELECT 1 FROM entities e WHERE e.module=p.module AND e.id=p.id)) ";
+    from = "catalog AS entities";
+  }
   const clauses = ["module=?"],
     values: any[] = [module];
   const allowed = new Set([
     "id",
     "q",
     "view",
+    "riskTags",
     ...moduleMap[module].filters.map((f) => f.key),
   ]);
   for (const [key, value] of Object.entries(query)) {
-    if (!value || ["page", "pageSize", "searchMode"].includes(key)) continue;
+    if (
+      !value ||
+      ["page", "pageSize", "searchMode", "changeTaskId"].includes(key)
+    )
+      continue;
     if (!allowed.has(key)) {
       clauses.push("0");
       continue;
     }
     const v = String(value);
-    if (key === "id") {
+    if (key === "riskTags") {
+      const ids = expandedRiskTags(db, v);
+      if (!ids.length) {
+        clauses.push("0");
+        continue;
+      }
+      const marks = ids.map(() => "?").join(",");
+      clauses.push(
+        "((json_type(entities.data,'$.riskTags') IS NULL AND EXISTS (SELECT 1 FROM source_archives a,json_each(a.data,'$.catalogInfo.riskTagInfo') t WHERE a.kind='rule' AND a.id=entities.id AND a.version='' AND CAST(t.key AS INTEGER) IN (" +
+          marks +
+          "))) OR EXISTS (SELECT 1 FROM json_each(entities.data,'$.riskTags') t WHERE CAST(CASE WHEN t.type='object' THEN json_extract(t.value,'$.id') ELSE t.value END AS INTEGER) IN (" +
+          marks +
+          ")))",
+      );
+      values.push(...ids, ...ids);
+    } else if (key === "id") {
       clauses.push(
         "(CAST(id AS TEXT)=? OR CAST(json_extract(data,'$.sourceId') AS TEXT)=?)",
       );
@@ -51,8 +89,8 @@ export function listCatalogEntities(
   const where = clauses.join(" AND ");
   const total = (
     db
-      .prepare("SELECT COUNT(*) n FROM entities WHERE " + where)
-      .get(...values) as any
+      .prepare(prefix + "SELECT COUNT(*) n FROM " + from + " WHERE " + where)
+      .get(...previewValues, ...values) as any
   ).n;
   const pageNumber = Number(query.page),
     sizeNumber = Number(query.pageSize);
@@ -64,10 +102,25 @@ export function listCatalogEntities(
     : 10;
   const rows = db
     .prepare(
-      "SELECT data FROM entities WHERE " +
+      prefix +
+        "SELECT data FROM " +
+        from +
+        " WHERE " +
         where +
         " ORDER BY json_extract(data,'$.updatedAt') DESC,id DESC LIMIT ? OFFSET ?",
     )
-    .all(...values, pageSize, (page - 1) * pageSize) as { data: string }[];
-  return { items: rows.map((r) => JSON.parse(r.data)), total, page, pageSize };
+    .all(...previewValues, ...values, pageSize, (page - 1) * pageSize) as {
+    data: string;
+  }[];
+  return {
+    items: rows.map((r) => {
+      const e = JSON.parse(r.data);
+      return module === "rulePage"
+        ? { ...e, ruleStats: ruleStats(db, e.id) }
+        : e;
+    }),
+    total,
+    page,
+    pageSize,
+  };
 }

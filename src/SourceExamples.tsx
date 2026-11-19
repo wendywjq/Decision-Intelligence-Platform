@@ -1,7 +1,11 @@
+import { RiskTagChips } from "./RiskTagSelect";
+import { ScenePolicyAdd } from "./ScenePolicyAdd";
+import { RuleReferenceStats } from "./RuleReferenceStats";
+import { useChangeTaskId, requestChangeEnvironment } from "./change-context";
 import { FuseRelated } from "./FusePage";
 import { FeatureDetailContent, RuleUsage } from "./SourceSecondary";
 import { formatDate } from "./date";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   App,
@@ -26,7 +30,8 @@ import {
   CopyOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link } from "./navigation";
 import { api, entityPath } from "./api";
 import { EntityEditor, PageHeader, Section, useRemote } from "./components";
 import { moduleMap, type Row } from "./catalog";
@@ -196,6 +201,7 @@ export function SourceConfigTable({
   readOnly?: boolean;
   sceneId?: number;
 }) {
+  const taskId = useChangeTaskId();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>();
   const [edit, setEdit] = useState<any>();
@@ -203,10 +209,20 @@ export function SourceConfigTable({
   const [form] = Form.useForm();
   const { message } = App.useApp();
   const [local, setLocal] = useState<Record<string, any>>({});
+  useEffect(() => {
+    if (!taskId) return;
+    const pending = sessionStorage.getItem("zeus-edit-policy");
+    const row = items.find((r) => String(r.id) === pending);
+    if (row) {
+      setEdit(row);
+      form.setFieldsValue(row);
+    }
+  }, [taskId, items, form]);
   const rows = items
     .map((r) => ({ ...r, ...local[r.id] }))
     .filter(
       (r) =>
+        !r._removed &&
         (!q ||
           `${r.ruleId} ${r.rule?.name || r.name} ${r.ruleGroupName || ""}`
             .toLowerCase()
@@ -279,9 +295,12 @@ export function SourceConfigTable({
                 <div className="secondary-name">
                   {r.rule?.enName || r.ruleName}
                 </div>
-                {r.tags?.map((tag: any) => (
-                  <Tag key={tag.id}>{tag.name}</Tag>
-                ))}
+                <RiskTagChips ids={r.riskTags || r.rule?.riskTags || []} />
+                {r.tags
+                  ?.filter((tag: any) => tag.objType !== 5)
+                  .map((tag: any) => (
+                    <Tag key={tag.id}>{tag.name}</Tag>
+                  ))}
                 {groupColumn && r.groupId > 0 && (
                   <div className="secondary-name">
                     规则组：{r.groupId} {r.ruleGroupName}
@@ -311,14 +330,19 @@ export function SourceConfigTable({
             title: "状态",
             dataIndex: "status",
             width: 80,
-            render: (v) => (
-              <Tag
-                color={
-                  v === "生效" ? "green" : v === "标记" ? "blue" : "default"
-                }
-              >
-                {v}
-              </Tag>
+            render: (v, r) => (
+              <>
+                <Tag
+                  color={
+                    v === "生效" ? "green" : v === "标记" ? "blue" : "default"
+                  }
+                >
+                  {v}
+                </Tag>
+                {r.pendingAction && (
+                  <Tag color="orange">待{r.pendingAction}</Tag>
+                )}
+              </>
             ),
           },
           { title: "优先级", dataIndex: "priority", width: 80 },
@@ -353,11 +377,57 @@ export function SourceConfigTable({
                   size="small"
                   disabled={readOnly}
                   onClick={() => {
-                    setEdit(r);
-                    form.setFieldsValue(r);
+                    const open = () => {
+                      setEdit(r);
+                      form.setFieldsValue(r);
+                    };
+                    if (r.locked && !taskId) {
+                      requestChangeEnvironment({
+                        onEntered: () =>
+                          sessionStorage.setItem(
+                            "zeus-edit-policy",
+                            String(r.id),
+                          ),
+                      });
+                      return;
+                    }
+                    open();
                   }}
                 >
                   编辑
+                </Button>
+                <Button
+                  type="link"
+                  size="small"
+                  disabled={readOnly || r.pendingAction === "删除"}
+                  onClick={() =>
+                    Modal.confirm({
+                      title: "删除策略配置？",
+                      content:
+                        r.locked && !taskId
+                          ? "已生效配置将进入策略变更流程。"
+                          : "确认删除所选策略配置？",
+                      onOk: async () => {
+                        try {
+                          await api(
+                            "/source/config/" + encodeURIComponent(r.id),
+                            "DELETE",
+                          );
+                          setLocal((old) => ({
+                            ...old,
+                            [r.id]: {
+                              pendingAction: taskId ? "删除" : undefined,
+                              _removed: !taskId,
+                            },
+                          }));
+                        } catch (e: any) {
+                          message.error(e.message);
+                        }
+                      },
+                    })
+                  }
+                >
+                  删除
                 </Button>
                 <RawData value={r} title="详情" />
               </Space>
@@ -366,9 +436,12 @@ export function SourceConfigTable({
         ]}
       />
       <Modal
-        title="编辑本地策略配置"
+        title="修改策略配置"
         open={!!edit}
-        onCancel={() => setEdit(undefined)}
+        onCancel={() => {
+          sessionStorage.removeItem("zeus-edit-policy");
+          setEdit(undefined);
+        }}
         onOk={async () => {
           try {
             const v = await form.validateFields();
@@ -377,7 +450,11 @@ export function SourceConfigTable({
               "PUT",
               v,
             );
-            setLocal((old) => ({ ...old, [edit.id]: v }));
+            setLocal((old) => ({
+              ...old,
+              [edit.id]: { ...v, pendingAction: taskId ? "修改" : undefined },
+            }));
+            sessionStorage.removeItem("zeus-edit-policy");
             setEdit(undefined);
             message.success("本地配置已保存");
           } catch (e: any) {
@@ -394,8 +471,8 @@ export function SourceConfigTable({
               }))}
             />
           </Form.Item>
-          <Form.Item name="decision" label="决策">
-            <Input />
+          <Form.Item name="decisionId" label="决策">
+            <PolicyDecisionSelect />
           </Form.Item>
           <Form.Item name="priority" label="优先级">
             <InputNumber min={0} />
@@ -412,10 +489,16 @@ export function ImportedSceneRules({
   module: string;
   id: number;
 }) {
-  const { data, error } = useRemote<{ items: any[] }>(
+  const taskId = useChangeTaskId();
+  useEffect(() => {
+    if (taskId && sessionStorage.getItem("zeus-edit-policy")) setFlat(true);
+  }, [taskId]);
+  const { data, error, reload } = useRemote<{ items: any[] }>(
     "/source/configs/" + module + "/" + id,
   );
-  const [flat, setFlat] = useState(false);
+  const [flat, setFlat] = useState(
+    () => !!sessionStorage.getItem("zeus-edit-policy"),
+  );
   const [groupQuery, setGroupQuery] = useState("");
   const groups = useMemo(() => {
     const map = new Map<number, any[]>();
@@ -441,6 +524,7 @@ export function ImportedSceneRules({
           <Tag>{groups.filter((g) => g.id).length} 个规则组</Tag>
         </Space>
         <Space>
+          <ScenePolicyAdd module={module} id={id} onSaved={reload} />
           <Input
             placeholder="搜索规则组"
             allowClear
@@ -492,6 +576,7 @@ export function ImportedSceneRules({
   );
 }
 export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
+  const { message } = App.useApp();
   const navigate = useNavigate();
   const { data, error } = useRemote<any>("/source/archive/rule/" + id);
   const refs = useRemote<{ items: Row[] }>("/source/rules/" + id + "/features");
@@ -501,6 +586,19 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
   const metadata = useRemote<any>("/source/rules/" + id + "/metadata");
   const [displayChoice, setDisplay] = useState<string>();
   const [edit, setEdit] = useState(false);
+  const taskId = useChangeTaskId();
+  useEffect(() => {
+    if (taskId && sessionStorage.getItem("zeus-edit-rule") === String(id)) {
+      setEdit(true);
+    }
+  }, [taskId, id]);
+  const openEditor = () => {
+    if (!taskId && row.ruleStats?.effective) {
+      requestChangeEnvironment({
+        onEntered: () => sessionStorage.setItem("zeus-edit-rule", String(id)),
+      });
+    } else setEdit(true);
+  };
   const rule = data?.logic || data?.detail?.basicInfo?.rule;
   const detail = data?.detail;
   const current = detail?.basicInfo;
@@ -517,7 +615,28 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
   return (
     <>
       <PageHeader title="规则详情">
-        <Button onClick={() => setEdit(true)}>编辑属性信息</Button>
+        <Button
+          onClick={() =>
+            Modal.confirm({
+              title: "删除规则？",
+              content: "已生效规则的删除须进入策略变更环境。",
+              onOk: async () => {
+                try {
+                  await api(entityPath("rulePage", id), "DELETE");
+                  navigate("/rulePage");
+                } catch (e: any) {
+                  message.error(e.message);
+                }
+              },
+            })
+          }
+        >
+          删除
+        </Button>
+        <Button type="primary" onClick={openEditor}>
+          编辑逻辑信息
+        </Button>
+        <Button onClick={openEditor}>编辑属性信息</Button>
         <RawData value={data} />
       </PageHeader>
       <div className="detail-status">
@@ -534,6 +653,13 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
         </span>
       </div>
       <SourceNotice />
+      {row.pendingAction && (
+        <Alert
+          type="warning"
+          message={"当前变更：" + row.pendingAction + "，发布前不影响线上"}
+        />
+      )}
+      <RuleReferenceStats id={id} />
       <Tabs
         items={[
           {
@@ -661,7 +787,10 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
         module={moduleMap.rulePage}
         row={row}
         open={edit}
-        onClose={() => setEdit(false)}
+        onClose={() => {
+          sessionStorage.removeItem("zeus-edit-rule");
+          setEdit(false);
+        }}
         onSaved={() => location.reload()}
       />
     </>
@@ -790,5 +919,20 @@ export function RiskTagExplorer() {
         />
       </div>
     </>
+  );
+}
+
+function PolicyDecisionSelect(props: any) {
+  const { data } = useRemote<any>("/entities/decisionList?pageSize=100");
+  return (
+    <Select
+      {...props}
+      showSearch
+      optionFilterProp="label"
+      options={data?.items.map((d: any) => ({
+        value: d.id,
+        label: d.id + "-" + d.name,
+      }))}
+    />
   );
 }

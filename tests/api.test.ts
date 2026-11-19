@@ -77,17 +77,27 @@ test("scene rule relation validates rule and prevents duplicate binding", async 
   const created = await request("/entities/scene", "POST", {
     name: "关联测试",
   });
+  const newRule = await request("/entities/rulePage", "POST", {
+    name: "独立关联规则",
+    expression: "riskScore > 0.9",
+  });
+  const ruleId = newRule.data.id;
   const path = "/scenes/scene/" + created.data.id + "/rules";
   assert.equal((await request(path, "POST", { ruleId: 999999 })).status, 404);
-  const r = await request(path, "POST", { ruleId: 20001, status: "标记" });
+  const r = await request(path, "POST", { ruleId, status: "标记" });
   assert.equal(r.status, 201);
-  assert.equal((await request(path, "POST", { ruleId: 20001 })).status, 409);
+  assert.equal((await request(path, "POST", { ruleId })).status, 409);
+  assert.equal(
+    (await request("/scene-rules/" + r.data.id, "PUT", { status: "灰度" }))
+      .status,
+    409,
+  );
   await request("/scene-rules/" + r.data.id, "PUT", {
-    status: "灰度",
+    status: "离线",
     decision: "拒绝",
     priority: 7,
   });
-  assert.equal((await request(path)).data.items[0].status, "灰度");
+  assert.equal((await request(path)).data.items[0].status, "离线");
   await request("/scene-rules/" + r.data.id, "DELETE");
   assert.equal((await request(path)).data.items.length, 0);
 });

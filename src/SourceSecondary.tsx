@@ -16,7 +16,8 @@ import {
   Tabs,
   Tag,
 } from "antd";
-import { Link, useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
+import {Link} from "./navigation";
 import { ReactFlow, Background, Controls, MarkerType } from "@xyflow/react";
 import { api, entityPath } from "./api";
 import { PageHeader, Section, useRemote, EntityEditor } from "./components";

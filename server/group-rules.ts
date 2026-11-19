@@ -1,3 +1,4 @@
+import { riskIdsForRule } from "./risk-filter.ts";
 import type Database from "better-sqlite3";
 import { randomUUID } from "node:crypto";
 export class GroupRuleError extends Error {
@@ -182,6 +183,10 @@ export function groupRules(db: Database.Database) {
         ruleId: r.rule_id,
         groupId: r.group_id,
         rule: entity("rulePage", r.rule_id),
+        riskTags: riskIdsForRule(db, r.rule_id),
+        modifiedBy:
+          d.modifier || d.owner || entity("rulePage", r.rule_id)?.owner,
+        modifiedAt: d.updatedAt || d.modtime,
         locked: refs.some((r) => active(r.status)),
         references: refs,
       };
@@ -209,6 +214,7 @@ export function groupRules(db: Database.Database) {
       sourceStatus: 32,
       ...patch(body),
       updatedAt: new Date().toISOString(),
+      modifier: "demo",
     };
     const destinations = [
       { module: "rulesGroup", parent_id: groupId, node_id: "" },
@@ -255,7 +261,12 @@ export function groupRules(db: Database.Database) {
         else
           write({
             ...t,
-            data: { ...t.data, ...p, updatedAt: new Date().toISOString() },
+            data: {
+              ...t.data,
+              ...p,
+              updatedAt: new Date().toISOString(),
+              modifier: "demo",
+            },
           });
       }
       for (const t of rows.filter((t) => t.id.startsWith("legacy-group:"))) {

@@ -1,3 +1,5 @@
+import { RiskTagSelect } from "./RiskTagSelect";
+import { compileConditionLogic } from "./rule-logic";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -51,22 +53,28 @@ export function RuleWizard({
     [featureQuery, setFeatureQuery] = useState("");
   const values = Form.useWatch([], form) || {};
   const conditions = values.conditions || [];
-  const expression =
-    mode === "交互式"
-      ? conditions
-          .map(
-            (c: any) =>
-              `${c.feature || ""} ${c.operator || ">"} ${literal(c.value)}`,
-          )
-          .join(values.join === "或" ? " || " : " && ")
-      : values.expression || "";
+  let expression = values.expression || "",
+    logicError = "";
+  if (mode === "交互式")
+    try {
+      expression = compileConditionLogic(
+        values.conditionLogic || "1",
+        conditions.map(
+          (c: any) =>
+            `${c.feature || ""} ${c.operator || ">"} ${literal(c.value)}`,
+        ),
+      );
+    } catch (e: any) {
+      logicError = e.message;
+      expression = "";
+    }
   const draftKey = "zeus-rule-draft:" + String(groupId || "global");
   useEffect(() => {
     if (!open) return;
     form.resetFields();
     form.setFieldsValue({
       conditions: [{ operator: ">" }],
-      join: "且",
+      conditionLogic: "1",
       owner: "demo",
       status: "就绪",
       groupStatus: "标记",
@@ -175,6 +183,7 @@ export function RuleWizard({
               ])
             : ["expression"]),
         ]);
+        if (logicError) return message.error(logicError);
         if (!expression.trim()) return message.error("请填写规则逻辑");
         setStep(1);
       } else if (
@@ -231,7 +240,7 @@ export function RuleWizard({
         riskTags: v.riskTags || [],
         editMode: mode,
         ruleConditions: mode === "交互式" ? conditions : [],
-        conditionLogic: v.join,
+        conditionLogic: v.conditionLogic,
       };
       const created = groupId
         ? await api<any>("/groups/" + groupId + "/create-rule", "POST", {
@@ -395,15 +404,34 @@ export function RuleWizard({
                           </Button>
                         </Space>
                       ))}
-                      <Button onClick={() => add({ operator: ">" })}>
+                      <Button
+                        onClick={() => {
+                          add({ operator: ">" });
+                          form.setFieldValue(
+                            "conditionLogic",
+                            "(" +
+                              (form.getFieldValue("conditionLogic") || "1") +
+                              ")&&" +
+                              (fields.length + 1),
+                          );
+                        }}
+                      >
                         添加条件
                       </Button>
                     </>
                   )}
                 </Form.List>
-                <Form.Item name="join" label="条件间逻辑">
-                  <Radio.Group options={["且", "或"]} />
+                <Form.Item
+                  name="conditionLogic"
+                  label="条件间逻辑"
+                  rules={[{ required: true, message: "请输入条件间逻辑" }]}
+                >
+                  <Input placeholder="例如：1&&(2||4)||3" />
                 </Form.Item>
+                {logicError && <Alert type="error" message={logicError} />}
+                <p className="muted">
+                  使用条件编号、&&、||、! 和括号组合，同一条件可以重复使用。
+                </p>
               </>
             ) : (
               <Form.Item
@@ -525,28 +553,7 @@ export function RuleWizard({
             <Select mode="tags" />
           </Form.Item>
           <Form.Item name="riskTags" label="风险标签">
-            <Select
-              mode="multiple"
-              showSearch
-              optionFilterProp="label"
-              onSearch={(query) =>
-                api<any>(
-                  "/entities/tag?pageSize=100&view=" +
-                    encodeURIComponent("风险标签") +
-                    "&q=" +
-                    encodeURIComponent(query),
-                )
-                  .then((d) =>
-                    setTags((old) => [
-                      ...new Map(
-                        [...old, ...d.items].map((t) => [t.id, t]),
-                      ).values(),
-                    ]),
-                  )
-                  .catch((e) => message.error(e.message))
-              }
-              options={tags.map((t) => ({ value: t.id, label: t.name }))}
-            />
+            <RiskTagSelect />
           </Form.Item>
           <h3>添加话术</h3>
           <Form.Item name="riskText" label="风控话术">

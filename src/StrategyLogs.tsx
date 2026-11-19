@@ -18,7 +18,8 @@ import {
   Tag,
   Tree,
 } from "antd";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {useNavigate,useSearchParams} from "react-router-dom";
+import {Link} from "./navigation";
 import { ReactFlow, Background, Controls, MarkerType } from "@xyflow/react";
 import { PageHeader, Section, useRemote } from "./components";
 import { RawData } from "./SourceExamples";

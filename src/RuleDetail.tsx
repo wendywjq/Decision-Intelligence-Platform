@@ -1,3 +1,5 @@
+import { RiskTagChips } from "./RiskTagSelect";
+import { RuleReferenceStats } from "./RuleReferenceStats";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -134,6 +136,13 @@ export function RuleDetail() {
         </Button>
         <Tag color="green">{rule.status || "就绪"}</Tag>
       </div>
+      <RuleReferenceStats id={id} />
+      {rule.pendingAction && (
+        <Alert
+          type="warning"
+          message={"当前变更：" + rule.pendingAction + "，发布前不影响线上"}
+        />
+      )}
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -210,14 +219,23 @@ export function RuleDetail() {
                 <Table
                   pagination={false}
                   rowKey="id"
-                  dataSource={[
-                    {
-                      id: 1,
-                      left: conditions?.[1] || "复合表达式",
-                      op: conditions ? operators[conditions[2]] : "—",
-                      right: conditions?.[3] || rule.expression,
-                    },
-                  ]}
+                  dataSource={
+                    rule.ruleConditions?.length
+                      ? rule.ruleConditions.map((c: any, i: number) => ({
+                          id: i + 1,
+                          left: c.feature,
+                          op: operators[c.operator] || c.operator,
+                          right: c.value,
+                        }))
+                      : [
+                          {
+                            id: 1,
+                            left: conditions?.[1] || "复合表达式",
+                            op: conditions ? operators[conditions[2]] : "—",
+                            right: conditions?.[3] || rule.expression,
+                          },
+                        ]
+                  }
                   columns={[
                     { title: "条件", dataIndex: "id", width: 100 },
                     {
@@ -232,7 +250,7 @@ export function RuleDetail() {
                   ]}
                 />
                 <div className="condition-logic">
-                  条件间逻辑： <code>1</code>
+                  条件间逻辑： <code>{rule.conditionLogic || "1"}</code>
                 </div>
               </>
             ) : (
@@ -342,11 +360,7 @@ export function RuleDetail() {
           </Section>
           <Section title="风险标签">
             {rule.riskTags?.length ? (
-              rule.riskTags.map((tag: any) => (
-                <Tag key={typeof tag === "object" ? tag.id : tag}>
-                  {typeof tag === "object" ? tag.name : String(tag)}
-                </Tag>
-              ))
+              <RiskTagChips ids={rule.riskTags} />
             ) : (
               <span className="muted">暂无</span>
             )}

@@ -172,6 +172,8 @@ export const modules: Module[] = [
       ["name", "规则名称"],
       ["status", "状态"],
       ["tags", "标签"],
+      ["referenceCount", "被引用次数"],
+      ["decisionDistribution", "被引用决策分布"],
       ["createdAt", "创建"],
       ["updatedAt", "最后修改"],
     ],

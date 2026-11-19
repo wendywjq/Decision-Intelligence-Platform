@@ -1,3 +1,8 @@
+import {
+  ChangeEnvironmentBar,
+  ChangeEnvironmentLauncher,
+} from "./ChangeEnvironment";
+import { useChangeTaskId, requestChangeEnvironment } from "./change-context";
 import { RuleWizardPage } from "./RuleWizard";
 import { FusePage } from "./FusePage";
 import { StrategyLogs, StrategyLogDetail } from "./StrategyLogs";
@@ -70,6 +75,7 @@ export default function App() {
   const [open, setOpen] = useState(["策略部署", "策略管理", "策略变更"]);
   const [collapsed, setCollapsed] = useState(false);
   const [env, setEnv] = useState("Prod");
+  const taskId = useChangeTaskId();
   const [space, setSpace] = useState("35-内容安全");
   const [assistant, setAssistant] = useState(false);
   const [notice, setNotice] = useState(false);
@@ -78,6 +84,7 @@ export default function App() {
   const [answer, setAnswer] = useState("");
   return (
     <>
+      <ChangeEnvironmentLauncher />
       <header className="topbar">
         <div className="brand">
           <img className="zeus-brand-image" src="/zeus-logo.png" alt="Zeus" />
@@ -85,15 +92,16 @@ export default function App() {
         </div>
         <Dropdown
           menu={{
-            items: ["Prod", "Staging", "Test"].map((key) => ({
+            items: ["Prod", "变更环境", "Staging", "Test"].map((key) => ({
               key,
               label: key,
             })),
-            onClick: ({ key }) => setEnv(key),
+            onClick: ({ key }) =>
+              key === "变更环境" ? requestChangeEnvironment() : setEnv(key),
           }}
         >
           <Button className="environment" size="small">
-            {env}
+            {taskId ? "变更环境" : env}
             <DownOutlined />
           </Button>
         </Dropdown>
@@ -154,47 +162,54 @@ export default function App() {
           </Dropdown>
         </div>
       </header>
+      <ChangeEnvironmentBar />
       <aside className={"sidebar " + (collapsed ? "collapsed" : "")}>
         <div className="sidebar-title">{collapsed ? "Z" : "Zeus"}</div>
         <nav aria-label="主导航">
-          {groups.map((g) => (
-            <section key={g.name}>
-              <button
-                className="nav-group"
-                title={g.name}
-                onClick={() =>
-                  setOpen((v) =>
-                    v.includes(g.name)
-                      ? v.filter((x) => x !== g.name)
-                      : [...v, g.name],
-                  )
-                }
-              >
-                {icons[g.icon]}
-                {!collapsed && (
-                  <>
-                    <span>{g.name}</span>
-                    <DownOutlined
-                      className={open.includes(g.name) ? "rotate" : ""}
-                    />
-                  </>
+          {groups
+            .filter(
+              (g) =>
+                !taskId ||
+                ["策略部署", "策略管理", "配置中心"].includes(g.name),
+            )
+            .map((g) => (
+              <section key={g.name}>
+                <button
+                  className="nav-group"
+                  title={g.name}
+                  onClick={() =>
+                    setOpen((v) =>
+                      v.includes(g.name)
+                        ? v.filter((x) => x !== g.name)
+                        : [...v, g.name],
+                    )
+                  }
+                >
+                  {icons[g.icon]}
+                  {!collapsed && (
+                    <>
+                      <span>{g.name}</span>
+                      <DownOutlined
+                        className={open.includes(g.name) ? "rotate" : ""}
+                      />
+                    </>
+                  )}
+                </button>
+                {!collapsed && open.includes(g.name) && (
+                  <div className="nav-items">
+                    {g.keys.map((key) => (
+                      <a
+                        href={"#/" + key}
+                        key={key}
+                        className={pathname === "/" + key ? "selected" : ""}
+                      >
+                        {moduleMap[key].label}
+                      </a>
+                    ))}
+                  </div>
                 )}
-              </button>
-              {!collapsed && open.includes(g.name) && (
-                <div className="nav-items">
-                  {g.keys.map((key) => (
-                    <a
-                      href={"#/" + key}
-                      key={key}
-                      className={pathname === "/" + key ? "selected" : ""}
-                    >
-                      {moduleMap[key].label}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </section>
-          ))}
+              </section>
+            ))}
         </nav>
         <button
           className="collapse-button"
@@ -223,7 +238,13 @@ export default function App() {
             path="/layerScene/template/detail"
             element={<SourceGraphPage kind="template" />}
           />
-          {["detail", "experiment-detail", "gray-detail"].map((path) => (
+          {[
+            "detail",
+            "experiment-detail",
+            "gray-detail",
+            "experiment-config",
+            "gray-config",
+          ].map((path) => (
             <Route
               key={path}
               path={"/release/" + path}

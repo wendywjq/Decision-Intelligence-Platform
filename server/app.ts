@@ -1,3 +1,8 @@
+import { randomUUID } from "node:crypto";
+import { strategyChanges } from "./strategy-changes.ts";
+import { expandedRiskTags, riskIdsForRule } from "./risk-filter.ts";
+import { evaluateRuleExpression } from "../src/rule-logic.ts";
+import { assertRuleMutable, isEffective, ruleStats } from "./rule-policy.ts";
 import { expressionFeatureNames } from "./feature-refs.ts";
 import { groupRules, GroupRuleError } from "./group-rules.ts";
 import { listCatalogEntities } from "./catalog-list.ts";
@@ -36,6 +41,7 @@ export function createApp(db: Database.Database) {
         ...data,
         id,
         updatedAt: new Date().toISOString(),
+        modifier: "demo",
         createdAt: old?.createdAt || new Date().toISOString(),
       };
       db.prepare("INSERT OR REPLACE INTO entities VALUES(?,?,?)").run(
@@ -66,10 +72,154 @@ export function createApp(db: Database.Database) {
             );
           }
       }
+      if (m === "rulePage") {
+        const a = db
+          .prepare(
+            "SELECT data FROM source_archives WHERE kind='rule' AND id=? AND version='' ",
+          )
+          .get(id) as any;
+        if (a) {
+          const raw = JSON.parse(a.data);
+          raw.logic = {
+            ...raw.logic,
+            alias: next.name,
+            name: next.enName || raw.logic?.name,
+          };
+          if (data.expression !== undefined) {
+            raw.logic.expression = next.expression;
+            raw.logic.originExpression = next.expression;
+            raw.logic.ruleConditions = [];
+            raw.logic.editMode = 2;
+          }
+          if (data.riskTags)
+            raw.catalogInfo = {
+              ...raw.catalogInfo,
+              riskTagInfo: Object.fromEntries(
+                data.riskTags.map((v: any) => {
+                  const tid = Number(typeof v === "object" ? v.id : v);
+                  return [tid, get("tag", tid)?.name || String(tid)];
+                }),
+              ),
+            };
+          db.prepare(
+            "UPDATE source_archives SET data=? WHERE kind='rule' AND id=? AND version='' ",
+          ).run(JSON.stringify(raw), id);
+        }
+      }
       audit(m, id, next.name, action);
       return next;
     })();
   const groups = groupRules(db);
+  const changes = strategyChanges(db, groups, save);
+  app.use("/api", changes.middleware);
+  app.get("/api/changes/:id/context", (req, res) => {
+    const task = changes.task(Number(req.params.id));
+    res.json({
+      ...task,
+      isEditable:
+        task.phase === "实验" &&
+        !["已中止", "已回滚", "已完成"].includes(task.status),
+    });
+  });
+  app.post("/api/changes/:id/items", (req, res) =>
+    res.json(changes.stage(Number(req.params.id), req.body)),
+  );
+  app.delete("/api/changes/:id/items/:key", (req, res) =>
+    res.json(changes.remove(Number(req.params.id), req.params.key)),
+  );
+  app.post("/api/changes/:id/urgent", (req, res) => {
+    const task = changes.task(Number(req.params.id));
+    if (task.phase !== "实验" || !task.localChanges?.length)
+      return res.status(409).json({ error: "请先在可编辑任务中保存变更" });
+    if (!String(req.body.reason || "").trim())
+      return res.status(400).json({ error: "请填写紧急变更原因" });
+    res.json(
+      save(
+        "release/list",
+        task.id,
+        {
+          ...task,
+          type: "紧急变更",
+          deployMode: 0,
+          urgentReason: req.body.reason,
+          phase: "审批",
+          status: "待审批",
+        },
+        "紧急变更",
+      ),
+    );
+  });
+  app.get("/api/policy-configs", (req, res) => {
+    const clauses = [
+        "c.scene_module IN ('scene','layerScene','routerSceneList')",
+      ],
+      values: any[] = [];
+    if (req.query.sceneId) {
+      clauses.push("c.scene_id=?");
+      values.push(Number(req.query.sceneId));
+    }
+    if (req.query.q) {
+      clauses.push(
+        "instr(lower(CAST(c.rule_id AS TEXT)||' '||COALESCE(json_extract(e.data,'$.name'),'')),lower(?))>0",
+      );
+      values.push(String(req.query.q));
+    }
+    const rows = db
+      .prepare(
+        "SELECT c.* FROM source_configs c LEFT JOIN entities e ON e.module='rulePage' AND e.id=c.rule_id WHERE " +
+          clauses.join(" AND ") +
+          " LIMIT 100",
+      )
+      .all(...values) as any[];
+    const items = rows.map((r) => ({
+      ...JSON.parse(r.data),
+      id: r.id,
+      ruleId: r.rule_id,
+      ruleName: get("rulePage", r.rule_id)?.name,
+      sceneName: get(r.scene_module, r.scene_id)?.name,
+      scope: { module: r.scene_module, sceneId: r.scene_id, nodeId: r.node_id },
+    }));
+    for (const r of db
+      .prepare(
+        "SELECT * FROM scene_rules WHERE scene_module!='rulesGroup' LIMIT 30",
+      )
+      .all() as any[])
+      if (
+        (!req.query.sceneId || Number(req.query.sceneId) === r.scene_id) &&
+        (!req.query.q ||
+          String(r.rule_id).includes(String(req.query.q)) ||
+          (get("rulePage", r.rule_id)?.name || "").includes(
+            String(req.query.q),
+          ))
+      )
+        items.push({
+          ...r,
+          id: "legacy:" + r.id,
+          ruleId: r.rule_id,
+          ruleName: get("rulePage", r.rule_id)?.name,
+          sceneName: get(r.scene_module, r.scene_id)?.name,
+          scope: { module: r.scene_module, sceneId: r.scene_id, nodeId: "" },
+        });
+    res.json({ items });
+  });
+  app.get("/api/rules/:id/stats", (req, res) =>
+    res.json(ruleStats(db, Number(req.params.id))),
+  );
+  app.post("/api/groups/:id/rules/batch", (req, res) => {
+    if (!Array.isArray(req.body.ids) || !req.body.ids.length)
+      return res.status(400).json({ error: "请选择规则配置" });
+    const result = db.transaction(() =>
+      req.body.ids.map((id: string) =>
+        groups.update(
+          Number(req.params.id),
+          id,
+          req.body.patch || {},
+          req.body.action === "删除",
+        ),
+      ),
+    )();
+    res.json({ ok: true, items: result });
+  });
   app.get("/api/groups/:id/rules", (req, res) =>
     res.json({
       items: groups.list(Number(req.params.id)),
@@ -200,31 +350,119 @@ export function createApp(db: Database.Database) {
         .json({ error: "未找到该主体的累计值，示例主体为 demo" });
     res.json(row);
   });
-  app.put("/api/source/config/:id", (req, res) => {
+  const updateSourceConfig = (id: string, body: any, remove = false) => {
     const row = db
       .prepare("SELECT * FROM source_configs WHERE id=?")
-      .get(req.params.id) as any;
-    if (!row) return res.status(404).json({ error: "配置不存在" });
+      .get(id) as any;
+    if (!row) throw new GroupRuleError(404, "配置不存在");
     if (row.scene_module === "rulesGroup")
-      return res.json(groups.update(row.scene_id, req.params.id, req.body));
+      return groups.update(row.scene_id, id, body, remove);
     const old = JSON.parse(row.data);
+    assertRuleMutable(db, row.rule_id);
+    if (remove) {
+      db.prepare("DELETE FROM source_configs WHERE id=?").run(id);
+      return { ok: true };
+    }
+    if (isEffective(body.status))
+      throw new GroupRuleError(409, "生效配置请通过策略变更发布", {
+        code: "CHANGE_REQUIRED",
+      });
     const next = {
       ...old,
-      status: req.body.status ?? old.status,
-      decision: req.body.decision ?? old.decision,
-      priority: req.body.priority ?? old.priority,
+      ...Object.fromEntries(
+        [
+          "extraInfoId",
+          "extraInfoName",
+          "reasonId",
+          "reasonName",
+          "derivedParamsId",
+          "priority",
+        ]
+          .filter((k) => body[k] !== undefined)
+          .map((k) => [k, body[k]]),
+      ),
+      status:
+        ({ 0: "离线", 32: "标记" } as any)[body.status] ||
+        body.status ||
+        old.status,
+      decision: body.decisionId
+        ? get("decisionList", Number(body.decisionId))?.name
+        : (body.decision ?? old.decision),
+      decisionId: body.decisionId ?? old.decisionId,
+      modifier: "demo",
+      updatedAt: new Date().toISOString(),
     };
     db.prepare("UPDATE source_configs SET data=? WHERE id=?").run(
       JSON.stringify(next),
-      req.params.id,
+      id,
     );
-    res.json(next);
+    return next;
+  };
+  app.put("/api/source/config/:id", (req, res) =>
+    res.json(updateSourceConfig(req.params.id, req.body)),
+  );
+  app.delete("/api/source/config/:id", (req, res) =>
+    res.json(updateSourceConfig(req.params.id, {}, true)),
+  );
+  app.post("/api/policy-configs/batch", (req, res) => {
+    if (!Array.isArray(req.body.ids) || !req.body.ids.length)
+      return res.status(400).json({ error: "请选择策略配置" });
+    const items = db.transaction(() =>
+      req.body.ids.map((id: string) => {
+        if (id.startsWith("legacy:")) {
+          const r = db
+            .prepare("SELECT * FROM scene_rules WHERE id=?")
+            .get(Number(id.slice(7))) as any;
+          if (!r) throw new GroupRuleError(404, "配置不存在");
+          assertRuleMutable(db, r.rule_id);
+          if (req.body.action === "删除")
+            db.prepare("DELETE FROM scene_rules WHERE id=?").run(r.id);
+          else {
+            const patch = req.body.patch || {};
+            if (isEffective(patch.status))
+              throw new GroupRuleError(409, "生效配置请通过策略变更发布", {
+                code: "CHANGE_REQUIRED",
+              });
+            db.prepare(
+              "UPDATE scene_rules SET status=?,decision=?,priority=? WHERE id=?",
+            ).run(
+              patch.status ?? r.status,
+              patch.decisionId
+                ? get("decisionList", Number(patch.decisionId))?.name
+                : (patch.decision ?? r.decision),
+              patch.priority ?? r.priority,
+              r.id,
+            );
+          }
+          return { ok: true };
+        }
+        return updateSourceConfig(
+          id,
+          req.body.patch || {},
+          req.body.action === "删除",
+        );
+      }),
+    )();
+    res.json({ ok: true, items });
   });
   app.get("/api/source/risk-tags", (_req, res) => {
     const rows = db
       .prepare("SELECT data FROM source_archives WHERE kind='tag'")
       .all() as any[];
-    res.json({ items: rows.map((r) => JSON.parse(r.data)) });
+    const byId = new Map(
+      rows.map((r) => {
+        const t = JSON.parse(r.data);
+        return [t.id, t];
+      }),
+    );
+    for (const row of db
+      .prepare("SELECT data FROM entities WHERE module='tag'")
+      .all() as any[]) {
+      const t = JSON.parse(row.data);
+      if (t.type === "风险标签" || t.view === "风险标签")
+        byId.set(t.id, { ...byId.get(t.id), ...t });
+    }
+    res.json({ items: [...byId.values()] });
   });
   app.get("/api/source/features/:id/dependencies", (req, res) => {
     const row = db
@@ -271,14 +509,21 @@ export function createApp(db: Database.Database) {
   app.get("/api/source/configs/:module/:id", (req, res) => {
     const rows = db
       .prepare(
-        "SELECT data FROM source_configs WHERE scene_module=? AND scene_id=?",
+        "SELECT * FROM source_configs WHERE scene_module=? AND scene_id=?",
       )
       .all(req.params.module, Number(req.params.id)) as { data: string }[];
     res.json({
-      items: rows.map((x) => {
+      items: rows.map((x: any) => {
         const c = JSON.parse(x.data);
         return {
           ...c,
+          scope: {
+            module: x.scene_module,
+            sceneId: x.scene_id,
+            nodeId: x.node_id,
+          },
+          locked: ruleStats(db, c.ruleId).effective,
+          riskTags: riskIdsForRule(db, c.ruleId),
           rule: (() => {
             const r = get("rulePage", c.ruleId);
             return r
@@ -344,7 +589,22 @@ export function createApp(db: Database.Database) {
         .all(m) as { data: string }[]
     ).map((x) => JSON.parse(x.data));
     for (const [k, v] of Object.entries(req.query)) {
-      if (!v || ["page", "pageSize", "searchMode"].includes(k)) continue;
+      if (!v || ["page", "pageSize", "searchMode", "changeTaskId"].includes(k))
+        continue;
+      if (k === "riskTags") {
+        const ids = new Set(expandedRiskTags(db, v));
+        rows = rows.filter((r) => {
+          const refs = db
+            .prepare(
+              "SELECT rule_id FROM source_configs WHERE scene_module=? AND scene_id=?",
+            )
+            .all(m, r.id) as any[];
+          return refs.some((c) =>
+            riskIdsForRule(db, c.rule_id).some((id) => ids.has(id)),
+          );
+        });
+        continue;
+      }
       if (
         ["scene", "rulesGroup"].includes(m) &&
         ["ruleId", "decision", "status"].includes(k)
@@ -413,7 +673,13 @@ export function createApp(db: Database.Database) {
     });
   });
   app.get("/api/entities/:module/:id", (req, res) => {
-    const row = get(req.params.module, Number(req.params.id));
+    let row = get(req.params.module, Number(req.params.id));
+    if (row && req.params.module === "rulePage")
+      row = {
+        ...row,
+        riskTags: riskIdsForRule(db, row.id),
+        ruleStats: ruleStats(db, row.id),
+      };
     return row ? res.json(row) : res.status(404).json({ error: "记录不存在" });
   });
   app.post("/api/entities/:module", (req, res) => {
@@ -452,6 +718,7 @@ export function createApp(db: Database.Database) {
     const m = req.params.module,
       id = Number(req.params.id);
     if (!get(m, id)) return res.status(404).json({ error: "记录不存在" });
+    if (m === "rulePage") assertRuleMutable(db, id);
     const parsed = bodySchema.safeParse(req.body);
     if (!parsed.success)
       return res.status(400).json({ error: "请输入有效名称" });
@@ -462,11 +729,14 @@ export function createApp(db: Database.Database) {
       id = Number(req.params.id),
       old = get(m, id);
     if (!old) return res.status(404).json({ error: "记录不存在" });
+    if (m === "rulePage") assertRuleMutable(db, id);
     db.transaction(() => {
       db.prepare("DELETE FROM entities WHERE module=? AND id=?").run(m, id);
-      if (m === "rulePage")
+      if (m === "rulePage") {
         db.prepare("DELETE FROM scene_rules WHERE rule_id=?").run(id);
-      else
+        db.prepare("DELETE FROM source_configs WHERE rule_id=?").run(id);
+        db.prepare("DELETE FROM source_feature_refs WHERE rule_id=?").run(id);
+      } else
         db.prepare(
           "DELETE FROM scene_rules WHERE scene_module=? AND scene_id=?",
         ).run(m, id);
@@ -493,6 +763,15 @@ export function createApp(db: Database.Database) {
           ...old,
           name: `${old.name}_copy`,
           enName: old.enName ? `${old.enName}_copy` : undefined,
+          ...(m === "rulePage"
+            ? {
+                sourceImported: false,
+                sourceId: undefined,
+                refCount: 0,
+                ruleStats: undefined,
+                status: "就绪",
+              }
+            : {}),
         },
         "复制",
       ),
@@ -509,6 +788,8 @@ export function createApp(db: Database.Database) {
     }),
   );
   app.post("/api/entities/:module/:id/restore/:version", (req, res) => {
+    if (req.params.module === "rulePage")
+      assertRuleMutable(db, Number(req.params.id));
     const v = db
       .prepare(
         "SELECT data FROM versions WHERE id=? AND module=? AND entity_id=?",
@@ -536,7 +817,25 @@ export function createApp(db: Database.Database) {
       )
       .all(req.params.module, Number(req.params.id)) as any[];
     res.json({
-      items: rows.map((r) => ({ ...r, rule: get("rulePage", r.rule_id) })),
+      items: [
+        ...rows.map((r) => ({
+          ...r,
+          locked: ruleStats(db, r.rule_id).effective,
+          rule: get("rulePage", r.rule_id),
+        })),
+        ...(
+          db
+            .prepare(
+              "SELECT * FROM source_configs WHERE scene_module=? AND scene_id=?",
+            )
+            .all(req.params.module, Number(req.params.id)) as any[]
+        ).map((r) => ({
+          ...JSON.parse(r.data),
+          rule_id: r.rule_id,
+          locked: ruleStats(db, r.rule_id).effective,
+          rule: get("rulePage", r.rule_id),
+        })),
+      ],
     });
   });
   app.post("/api/scenes/:module/:id/rules", (req, res) => {
@@ -548,6 +847,41 @@ export function createApp(db: Database.Database) {
       !get("rulePage", ruleId)
     )
       return res.status(404).json({ error: "场景或规则不存在" });
+    if (isEffective(req.body.status ?? "标记"))
+      return res
+        .status(409)
+        .json({ error: "生效配置请通过策略变更发布", code: "CHANGE_REQUIRED" });
+    const status =
+      ({ 0: "离线", 32: "标记" } as any)[req.body.status] ||
+      req.body.status ||
+      "标记";
+    if (get(req.params.module, Number(req.params.id))?.sourceImported) {
+      const id = "scene-local:" + randomUUID();
+      const decision = req.body.decisionId
+        ? get("decisionList", Number(req.body.decisionId))?.name
+        : req.body.decision || "人工审核";
+      const data = {
+        id,
+        ruleId,
+        rule_id: ruleId,
+        groupId: 0,
+        ...req.body,
+        status,
+        decision,
+        modifier: "demo",
+        updatedAt: new Date().toISOString(),
+      };
+      db.prepare("INSERT INTO source_configs VALUES(?,?,?,?,?,?,?)").run(
+        id,
+        req.params.module,
+        Number(req.params.id),
+        ruleId,
+        0,
+        req.body.nodeId || "",
+        JSON.stringify(data),
+      );
+      return res.status(201).json({ id });
+    }
     try {
       const info = db
         .prepare(
@@ -557,8 +891,11 @@ export function createApp(db: Database.Database) {
           req.params.module,
           Number(req.params.id),
           ruleId,
-          req.body.status || "生效",
-          req.body.decision || "人工审核",
+          status,
+          req.body.decisionId
+            ? get("decisionList", Number(req.body.decisionId))?.name ||
+                "人工审核"
+            : req.body.decision || "人工审核",
           Number(req.body.priority) || 1,
         );
       audit(req.params.module, Number(req.params.id), "添加规则", "修改");
@@ -568,6 +905,10 @@ export function createApp(db: Database.Database) {
     }
   });
   app.put("/api/scene-rules/:id", (req, res) => {
+    if (
+      db.prepare("SELECT 1 FROM source_configs WHERE id=?").get(req.params.id)
+    )
+      return res.json(updateSourceConfig(req.params.id, req.body));
     const old = db
       .prepare("SELECT * FROM scene_rules WHERE id=?")
       .get(Number(req.params.id)) as any;
@@ -575,19 +916,29 @@ export function createApp(db: Database.Database) {
       return res.json(
         groups.update(old.scene_id, "legacy-group:" + old.id, req.body),
       );
+    if (!old) return res.status(404).json({ error: "配置不存在" });
+    assertRuleMutable(db, old.rule_id);
+    if (isEffective(req.body.status))
+      return res
+        .status(409)
+        .json({ error: "生效配置请通过策略变更发布", code: "CHANGE_REQUIRED" });
     const result = db
       .prepare(
         "UPDATE scene_rules SET status=?,decision=?,priority=? WHERE id=?",
       )
       .run(
-        req.body.status || "生效",
-        req.body.decision || "人工审核",
-        Number(req.body.priority) || 1,
+        req.body.status ?? old.status,
+        req.body.decision ?? old.decision,
+        req.body.priority ?? old.priority,
         Number(req.params.id),
       );
     res.status(result.changes ? 200 : 404).json({ ok: !!result.changes });
   });
   app.delete("/api/scene-rules/:id", (req, res) => {
+    if (
+      db.prepare("SELECT 1 FROM source_configs WHERE id=?").get(req.params.id)
+    )
+      return res.json(updateSourceConfig(req.params.id, {}, true));
     const old = db
       .prepare("SELECT * FROM scene_rules WHERE id=?")
       .get(Number(req.params.id)) as any;
@@ -595,6 +946,7 @@ export function createApp(db: Database.Database) {
       return res.json(
         groups.update(old.scene_id, "legacy-group:" + old.id, {}, true),
       );
+    if (old) assertRuleMutable(db, old.rule_id);
     db.prepare("DELETE FROM scene_rules WHERE id=?").run(Number(req.params.id));
     res.json({ ok: true });
   });
@@ -705,10 +1057,13 @@ export function createApp(db: Database.Database) {
       if (action === "回滚" && row.groupChangesApplied)
         return res.json(
           db.transaction(() => {
-            for (const snapshot of [
-              ...(row.groupChangeSnapshots || []),
-            ].reverse())
-              groups.rollback(snapshot);
+            for (const snapshot of [...(row.strategySnapshots || [])].reverse())
+              changes.rollback(snapshot);
+            if (!row.strategySnapshots)
+              for (const snapshot of [
+                ...(row.groupChangeSnapshots || []),
+              ].reverse())
+                groups.rollback(snapshot);
             return save(
               "release/list",
               row.id,
@@ -746,17 +1101,30 @@ export function createApp(db: Database.Database) {
     if (
       next.phase === "完成" &&
       !row.groupChangesApplied &&
-      row.localChanges?.some((c: any) => c.objectType === "规则组策略")
+      row.localChanges?.some((c: any) =>
+        ["规则", "场景策略", "规则组策略"].includes(c.objectType),
+      )
     ) {
       return res.json(
         db.transaction(() => {
-          const groupChangeSnapshots = row.localChanges
-            .filter((c: any) => c.objectType === "规则组策略")
-            .map((c: any) => groups.publish(c));
+          const strategySnapshots = [...row.localChanges]
+            .sort(
+              (a: any, b: any) =>
+                Number(b.objectType === "规则" && b.action === "新增") -
+                Number(a.objectType === "规则" && a.action === "新增"),
+            )
+            .filter((c: any) =>
+              ["规则", "场景策略", "规则组策略"].includes(c.objectType),
+            )
+            .map((c: any) => changes.publish(c));
+          for (const t of row.draftTests || [])
+            db.prepare(
+              "INSERT INTO test_runs(rule_id,input,expected,actual,passed) VALUES(?,?,?,?,?)",
+            ).run(t.rule_id, t.input, t.expected, t.actual, t.passed);
           return save(
             "release/list",
             row.id,
-            { ...next, groupChangesApplied: true, groupChangeSnapshots },
+            { ...next, groupChangesApplied: true, strategySnapshots },
             action,
           );
         })(),
@@ -772,73 +1140,4 @@ export function createApp(db: Database.Database) {
   );
   return app;
 }
-// Deliberately restricted grammar: never execute arbitrary user code.
-export function evaluateExpression(
-  expression: string,
-  input: Record<string, unknown>,
-): boolean {
-  if (typeof expression !== "string") throw Error("表达式不能为空");
-  if (expression.includes("||"))
-    return expression
-      .split(/\s*\|\|\s*/)
-      .map((part) => evaluateExpression(part, input))
-      .some(Boolean);
-  const atoms = expression.split(/\s*(&&|\|\|)\s*/);
-  let result: boolean | undefined;
-  let join = "&&";
-  for (const atom of atoms) {
-    if (atom === "&&" || atom === "||") {
-      join = atom;
-      continue;
-    }
-    const match = atom
-      .trim()
-      .match(
-        /^([A-Za-z_]\w*)\s*(>=|<=|==|!=|>|<)\s*("[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|true|false)$/,
-      );
-    if (!match)
-      throw Error(
-        "示例引擎支持：变量 比较符 常量，以及 && / ||；不支持完整 Aviator 语法",
-      );
-    const [, field, op, raw] = match;
-    if (!(field in input)) throw Error(`缺少输入参数：${field}`);
-    const left = input[field];
-    const right = raw[0] === "'" ? raw.slice(1, -1) : JSON.parse(raw);
-    const num = () => {
-      if (typeof left !== "number" || typeof right !== "number")
-        throw Error("大小比较需要数值类型");
-      return [left, right];
-    };
-    let v = false;
-    switch (op) {
-      case ">": {
-        const [a, b] = num();
-        v = a > b;
-        break;
-      }
-      case ">=": {
-        const [a, b] = num();
-        v = a >= b;
-        break;
-      }
-      case "<": {
-        const [a, b] = num();
-        v = a < b;
-        break;
-      }
-      case "<=": {
-        const [a, b] = num();
-        v = a <= b;
-        break;
-      }
-      case "==":
-        v = left === right;
-        break;
-      case "!=":
-        v = left !== right;
-    }
-    result =
-      result === undefined ? v : join === "&&" ? result && v : result || v;
-  }
-  return Boolean(result);
-}
+export const evaluateExpression = evaluateRuleExpression;

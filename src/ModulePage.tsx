@@ -1,3 +1,7 @@
+import { ChangeReview } from "./ChangeReview";
+import { enterChangeEnvironment } from "./change-context";
+import { RiskTagSelect } from "./RiskTagSelect";
+import { DecisionDistribution } from "./RuleReferenceStats";
 import { GroupRules } from "./GroupRules";
 import { GraphInfoEditor } from "./SourceSecondary";
 import { GraphVersionDrawer } from "./GraphVersions";
@@ -157,6 +161,16 @@ export function ModulePage({ module: m }: { module: Module }) {
             ? 130
             : undefined,
       render: (v: any, r: Row) => {
+        if (key === "referenceCount")
+          return (
+            <span>
+              {r.ruleStats?.sourceReferenceCount ??
+                r.ruleStats?.referenceCount ??
+                0}
+            </span>
+          );
+        if (key === "decisionDistribution")
+          return <DecisionDistribution stats={r.ruleStats} />;
         if (key === "id" && m.key === "featureService") return r.sourceId || v;
         if (key === "name")
           return (
@@ -180,7 +194,7 @@ export function ModulePage({ module: m }: { module: Module }) {
             <span>
               {formatDate(v)}
               <br />
-              <span className="muted">{r.owner}</span>
+              <span className="muted">{r.modifier || r.owner}</span>
             </span>
           );
         if (key === "status")
@@ -465,7 +479,22 @@ export function ModulePage({ module: m }: { module: Module }) {
             <label key={f.key} className="filter-field">
               <span>{f.label}:</span>
               <div className="filter-control">
-                {m.key === "scene" && i === 0 ? (
+                {f.key === "tags" &&
+                ["scene", "rulePage", "rulesGroup"].includes(m.key) ? (
+                  <RiskTagSelect
+                    value={(filters.riskTags || "")
+                      .split(",")
+                      .filter(Boolean)
+                      .map(Number)}
+                    onChange={(ids) => {
+                      setFilters((old) => ({
+                        ...old,
+                        riskTags: ids.join(","),
+                      }));
+                      setPage(1);
+                    }}
+                  />
+                ) : m.key === "scene" && i === 0 ? (
                   <Space.Compact style={{ width: "100%" }}>
                     <Select
                       value={searchMode}
@@ -516,15 +545,12 @@ export function ModulePage({ module: m }: { module: Module }) {
                   Modal.info({
                     title: "标签搜索",
                     content: (
-                      <Select
-                        style={{ width: "100%" }}
-                        mode="multiple"
-                        placeholder="请选择标签"
-                        options={["风险识别", "通用策略", "内容审核"].map(
-                          (value) => ({ value, label: value }),
-                        )}
-                        onChange={(v) =>
-                          setFilters((old) => ({ ...old, tags: v.join(",") }))
+                      <RiskTagSelect
+                        onChange={(ids) =>
+                          setFilters((old) => ({
+                            ...old,
+                            riskTags: ids.join(","),
+                          }))
                         }
                       />
                     ),
@@ -736,7 +762,7 @@ export function ModulePage({ module: m }: { module: Module }) {
     </>
   );
 }
-function ReleaseDetail({
+export function ReleaseDetail({
   row,
   onChanged,
 }: {
@@ -746,6 +772,7 @@ function ReleaseDetail({
   const { message } = App.useApp();
   const [experiment, setExperiment] = useState("双跑");
   const [ratio, setRatio] = useState(10);
+  const [urgentReason, setUrgentReason] = useState("");
   async function advance(action: string) {
     try {
       await api("/releases/" + row.id + "/advance", "POST", {
@@ -754,7 +781,7 @@ function ReleaseDetail({
         ratio,
       });
       onChanged();
-      message.success("本地示例任务已更新");
+      message.success("变更任务已更新");
     } catch (e: any) {
       message.error(e.message);
     }
@@ -762,10 +789,27 @@ function ReleaseDetail({
   return (
     <>
       <Alert
-        message="当前操作仅更新本地示例变更任务，不会发布到 Zeus。"
+        message={
+          row.phase === "完成"
+            ? "变更已发布"
+            : "变更环境与线上配置隔离，发布完成后统一生效。"
+        }
         type="info"
       />
+      <Space style={{ margin: "16px 0" }}>
+        <Button
+          type="primary"
+          disabled={
+            row.phase !== "实验" ||
+            ["已中止", "已完成", "已回滚"].includes(row.status || "")
+          }
+          onClick={() => enterChangeEnvironment(row.id, "/scene")}
+        >
+          进入变更环境
+        </Button>
+      </Space>
       <Tabs
+        defaultActiveKey={row.activeTab || "content"}
         items={[
           {
             key: "content",
@@ -786,48 +830,7 @@ function ReleaseDetail({
                   ]}
                 />
                 {!!row.localChanges?.length && (
-                  <Table<any>
-                    style={{ marginTop: 20 }}
-                    rowKey={(_, i) => String(i)}
-                    pagination={false}
-                    dataSource={row.localChanges}
-                    columns={[
-                      { title: "对象", dataIndex: "objectType" },
-                      { title: "规则组ID", dataIndex: "groupId" },
-                      { title: "规则ID", dataIndex: "ruleId" },
-                      { title: "操作", dataIndex: "action" },
-                      {
-                        title: "变更前",
-                        render: (_, c) => (
-                          <Space direction="vertical">
-                            <span>状态：{c.before?.status}</span>
-                            <span>
-                              决策：{c.before?.decision || c.before?.decisionId}
-                            </span>
-                            <span>优先级：{c.before?.priority}</span>
-                          </Space>
-                        ),
-                      },
-                      {
-                        title: "变更后",
-                        render: (_, c) =>
-                          c.action === "删除" ? (
-                            "删除该配置"
-                          ) : (
-                            <Space direction="vertical">
-                              <span>状态：{c.after?.status ?? "不变"}</span>
-                              <span>
-                                决策：
-                                {c.after?.decisionId
-                                  ? `决策ID ${c.after.decisionId}`
-                                  : c.after?.decision || "不变"}
-                              </span>
-                              <span>优先级：{c.after?.priority ?? "不变"}</span>
-                            </Space>
-                          ),
-                      },
-                    ]}
-                  />
+                  <ChangeReview task={row} onChanged={onChanged} />
                 )}
               </>
             ),
@@ -859,7 +862,7 @@ function ReleaseDetail({
                     disabled={row.phase !== "实验"}
                     onClick={() => advance("实验")}
                   >
-                    启动并完成示例实验
+                    启动实验
                   </Button>
                 </Space>
               </Section>
@@ -878,7 +881,7 @@ function ReleaseDetail({
                   disabled={row.phase !== "审批"}
                   onClick={() => advance("审批")}
                 >
-                  本地示例审批通过
+                  审批通过
                 </Button>
               </Section>
             ),
@@ -888,6 +891,36 @@ function ReleaseDetail({
             label: "灰度详情",
             children: (
               <Section title="灰度发布">
+                {row.urgentMode && row.phase === "实验" && (
+                  <>
+                    <Alert
+                      type="warning"
+                      message="紧急变更将跳过实验配置，仍须审核与灰度发布。"
+                    />
+                    <Input.TextArea
+                      style={{ margin: "16px 0" }}
+                      value={urgentReason}
+                      onChange={(e) => setUrgentReason(e.target.value)}
+                      placeholder="请输入紧急变更原因"
+                    />
+                    <Button
+                      type="primary"
+                      danger
+                      onClick={async () => {
+                        try {
+                          await api("/changes/" + row.id + "/urgent", "POST", {
+                            reason: urgentReason,
+                          });
+                          onChanged();
+                        } catch (e: any) {
+                          message.error(e.message);
+                        }
+                      }}
+                    >
+                      提交紧急变更
+                    </Button>
+                  </>
+                )}
                 <p>灰度进度：{row.progress || 0}%</p>
                 <Button
                   type="primary"

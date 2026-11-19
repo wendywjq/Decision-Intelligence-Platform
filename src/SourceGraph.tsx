@@ -1,3 +1,4 @@
+import { ScenePolicyAdd } from "./ScenePolicyAdd";
 import { GraphVersions } from "./GraphVersions";
 import { GraphInfoEditor } from "./SourceSecondary";
 import { formatDate } from "./date";
@@ -27,7 +28,8 @@ import {
   Tabs,
   Tag,
 } from "antd";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link } from "./navigation";
 import { useRemote, PageHeader, Section } from "./components";
 import { api } from "./api";
 import {

@@ -1,3 +1,4 @@
+import { ReleaseDetail } from "./ModulePage";
 import { useState } from "react";
 import {
   Alert,
@@ -112,7 +113,7 @@ export function ReleaseCreator({
           { stage: 4, grayRate: 100, grayTime: 10 },
         ],
       });
-      message.success("本地变更任务已创建");
+      message.success("变更任务已创建");
       onSaved();
       onClose();
       form.resetFields();
@@ -185,12 +186,41 @@ export function SourceReleasePage() {
     : route.includes("gray")
       ? "gray"
       : "changes";
-  const { data, error } = useRemote<any>("/source/archive/release/" + id);
+  const current = useRemote<any>(entityPath("release/list", id));
+  const { data, error } = useRemote<any>(
+    current.data?.sourceImported ? "/source/archive/release/" + id : "",
+  );
   const nav = useNavigate();
   const [create, setCreate] = useState(false);
   const active = tab;
   const [stage, setStage] = useState(0);
-  if (error) return <Alert type="error" message={error} />;
+  if (current.data && !current.data.sourceImported)
+    return (
+      <>
+        <PageHeader
+          title={
+            route.includes("-config")
+              ? tab === "experiment"
+                ? "实验配置"
+                : "灰度配置"
+              : "变更任务详情"
+          }
+        >
+          <Button onClick={() => nav("/release/list")}>返回变更管理</Button>
+        </PageHeader>
+        <ReleaseDetail
+          key={tab}
+          row={{
+            ...current.data,
+            activeTab: tab === "changes" ? "content" : tab,
+            urgentMode: params.get("deployMode") == "0",
+          }}
+          onChanged={current.reload}
+        />
+      </>
+    );
+  if (error || current.error)
+    return <Alert type="error" message={error || current.error} />;
   if (!data) return <Spin />;
   const basic = data.basic;
   const changeItems = data.changes?.list || [];

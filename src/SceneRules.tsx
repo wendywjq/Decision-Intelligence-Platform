@@ -11,7 +11,8 @@ import {
   Table,
   Tag,
 } from "antd";
-import { Link } from "react-router-dom";
+
+import {Link} from "./navigation";
 import { api } from "./api";
 import { useRemote } from "./components";
 import type { Row } from "./catalog";

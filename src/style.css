@@ -852,3 +852,6 @@ a {
     grid-template-columns: 1fr 1fr;
   }
 }
+ .change-environment-bar{position:fixed;top:48px;left:0;right:0;z-index:80;background:white;border-bottom:1px solid #ddd;min-height:52px;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}body:has(.change-environment-bar) .sidebar{top:110px}body:has(.change-environment-bar) main{padding-top:90px!important}body:has(.change-environment-bar) .environment{background:#d48806}
+
+body:has(.change-environment-bar) .topbar>.brand>span,body:has(.change-environment-bar) .topbar>*:not(.brand){display:none}body:has(.change-environment-bar) .sidebar{top:100px}

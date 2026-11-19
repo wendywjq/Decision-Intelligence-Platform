@@ -11,7 +11,8 @@ import {
   Alert,
   Table,
 } from "antd";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {useNavigate,useSearchParams} from "react-router-dom";
+import {Link} from "./navigation";
 import { api } from "./api";
 import { PageHeader, Section, useRemote } from "./components";
 export function FusePage() {
