@@ -1,3 +1,4 @@
+import { registerReleaseWorkflow } from "./release-workflow.ts";
 import { registerExperimentConfig } from "./experiment-config.ts";
 import { randomUUID } from "node:crypto";
 import { strategyChanges } from "./strategy-changes.ts";
@@ -130,7 +131,12 @@ export function createApp(db: Database.Database) {
   );
   app.post("/api/changes/:id/urgent", (req, res) => {
     const task = changes.task(Number(req.params.id));
-    if (task.phase !== "实验" || !task.localChanges?.length)
+    if (
+      task.sourceImported ||
+      task.phase !== "实验" ||
+      ["已中止", "已完成", "已回滚"].includes(task.status) ||
+      !task.localChanges?.length
+    )
       return res.status(409).json({ error: "请先在可编辑任务中保存变更" });
     if (!String(req.body.reason || "").trim())
       return res.status(400).json({ error: "请填写紧急变更原因" });
@@ -269,7 +275,13 @@ export function createApp(db: Database.Database) {
     res.status(201).json(result.rule);
   });
   registerDetailRoutes(app, db);
-  registerExperimentConfig(app, db, save);
+  const experiments = registerExperimentConfig(app, db, save);
+  registerReleaseWorkflow(app, db, {
+    save,
+    changes,
+    groups,
+    experimentContext: experiments.context,
+  });
   app.get("/api/references/rule/:id", (req, res) => {
     const ruleId = Number(req.params.id);
     const legacy = (
@@ -1048,91 +1060,6 @@ export function createApp(db: Database.Database) {
       JSON.stringify(req.body),
     );
     res.json({ ok: true });
-  });
-  app.post("/api/releases/:id/advance", (req, res) => {
-    const row = get("release/list", Number(req.params.id));
-    if (!row) return res.status(404).json({ error: "任务不存在" });
-    const phases = ["实验", "审批", "灰度", "完成"];
-    const action = req.body.action;
-    let next = { ...row };
-    if (action === "中止" || action === "回滚") {
-      if (action === "回滚" && row.groupChangesApplied)
-        return res.json(
-          db.transaction(() => {
-            for (const snapshot of [...(row.strategySnapshots || [])].reverse())
-              changes.rollback(snapshot);
-            if (!row.strategySnapshots)
-              for (const snapshot of [
-                ...(row.groupChangeSnapshots || []),
-              ].reverse())
-                groups.rollback(snapshot);
-            return save(
-              "release/list",
-              row.id,
-              {
-                ...row,
-                status: "已回滚",
-                stopTime: new Date().toISOString(),
-                groupChangesApplied: false,
-              },
-              action,
-            );
-          })(),
-        );
-      next.status = "已" + action;
-      next.stopTime = new Date().toISOString();
-    } else if (action === "实验") {
-      if (row.phase !== "实验")
-        return res.status(409).json({ error: "任务尚未进入实验阶段" });
-      next.experiment = req.body.experiment || "双跑";
-      next.ratio = req.body.ratio || 10;
-      next.phase = "审批";
-      next.status = "待审批";
-    } else if (action === "审批") {
-      if (row.phase !== "审批")
-        return res.status(409).json({ error: "任务尚未进入审批阶段" });
-      next.phase = "灰度";
-      next.status = "待启动";
-    } else if (action === "下一步") {
-      if (row.phase !== "灰度")
-        return res.status(409).json({ error: "任务尚未进入灰度阶段" });
-      next.progress = Math.min(100, (row.progress || 0) + 25);
-      next.status = next.progress === 100 ? "已完成" : "灰度中";
-      if (next.progress === 100) next.phase = phases[3];
-    } else return res.status(400).json({ error: "未知操作" });
-    if (
-      next.phase === "完成" &&
-      !row.groupChangesApplied &&
-      row.localChanges?.some((c: any) =>
-        ["规则", "场景策略", "规则组策略"].includes(c.objectType),
-      )
-    ) {
-      return res.json(
-        db.transaction(() => {
-          const strategySnapshots = [...row.localChanges]
-            .sort(
-              (a: any, b: any) =>
-                Number(b.objectType === "规则" && b.action === "新增") -
-                Number(a.objectType === "规则" && a.action === "新增"),
-            )
-            .filter((c: any) =>
-              ["规则", "场景策略", "规则组策略"].includes(c.objectType),
-            )
-            .map((c: any) => changes.publish(c));
-          for (const t of row.draftTests || [])
-            db.prepare(
-              "INSERT INTO test_runs(rule_id,input,expected,actual,passed) VALUES(?,?,?,?,?)",
-            ).run(t.rule_id, t.input, t.expected, t.actual, t.passed);
-          return save(
-            "release/list",
-            row.id,
-            { ...next, groupChangesApplied: true, strategySnapshots },
-            action,
-          );
-        })(),
-      );
-    }
-    return res.json(save("release/list", row.id, next, action));
   });
   app.use((err: any, _req: any, res: any, _next: any) =>
     res.status(err instanceof GroupRuleError ? err.status : 500).json({

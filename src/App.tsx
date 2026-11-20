@@ -244,6 +244,7 @@ export default function App() {
             "gray-detail",
             "experiment-config",
             "gray-config",
+            "approval-detail",
           ].map((path) => (
             <Route
               key={path}

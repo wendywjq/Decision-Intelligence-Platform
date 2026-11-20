@@ -654,17 +654,33 @@ export function strategyChanges(
     if (JSON.stringify(before) !== JSON.stringify(current))
       throw new GroupRuleError(409, "线上配置已变化，请重新核对变更内容");
   };
-  const ruleSnapshot = (id: number) => ({
-    entity: get("rulePage", id) || null,
-    archives: db
-      .prepare("SELECT * FROM source_archives WHERE kind='rule' AND id=?")
-      .all(id),
-    configs: db.prepare("SELECT * FROM source_configs WHERE rule_id=?").all(id),
-    legacy: db.prepare("SELECT * FROM scene_rules WHERE rule_id=?").all(id),
-    refs: db
-      .prepare("SELECT * FROM source_feature_refs WHERE rule_id=?")
-      .all(id),
+  // Database row order can change when another snapshot is restored. Compare
+  // these row sets by content, while keeping rule-condition array order intact.
+  const orderedSnapshot = (snapshot: any) => ({
+    ...snapshot,
+    ...Object.fromEntries(
+      ["archives", "configs", "legacy", "refs"].map((key) => [
+        key,
+        [...(snapshot[key] || [])].sort((a: any, b: any) =>
+          JSON.stringify(a).localeCompare(JSON.stringify(b)),
+        ),
+      ]),
+    ),
   });
+  const ruleSnapshot = (id: number) =>
+    orderedSnapshot({
+      entity: get("rulePage", id) || null,
+      archives: db
+        .prepare("SELECT * FROM source_archives WHERE kind='rule' AND id=?")
+        .all(id),
+      configs: db
+        .prepare("SELECT * FROM source_configs WHERE rule_id=?")
+        .all(id),
+      legacy: db.prepare("SELECT * FROM scene_rules WHERE rule_id=?").all(id),
+      refs: db
+        .prepare("SELECT * FROM source_feature_refs WHERE rule_id=?")
+        .all(id),
+    });
   const putConfig = (row: any) =>
     db
       .prepare("INSERT OR REPLACE INTO source_configs VALUES(?,?,?,?,?,?,?)")
@@ -836,7 +852,7 @@ export function strategyChanges(
       }
       return;
     }
-    unchanged(s.after, ruleSnapshot(s.id));
+    unchanged(orderedSnapshot(s.after), ruleSnapshot(s.id));
     db.prepare("DELETE FROM entities WHERE module='rulePage' AND id=?").run(
       s.id,
     );

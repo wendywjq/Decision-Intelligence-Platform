@@ -40,9 +40,17 @@ export function registerExperimentConfig(
       maps[kind].set(module + ":" + id, {
         id,
         module,
-        name: name || get(module, id)?.name || String(id),
+        name:
+          name ||
+          get(module, id)?.name ||
+          maps[kind].get(module + ":" + id)?.name ||
+          String(id),
       });
     };
+    for (const kind of Object.keys(maps)) {
+      for (const x of task.affectedSnapshot?.[kind] || [])
+        add(kind, x.id, x.module, x.name);
+    }
     for (const kind of Object.keys(maps))
       for (const x of raw.affected?.[kind]?.[kind] || [])
         add(
@@ -109,6 +117,8 @@ export function registerExperimentConfig(
           label,
         });
     }
+    for (const s of task.trafficSourceSnapshot || [])
+      traffic.set(s.module + ":" + s.id, s);
     const sceneIds = new Set([...traffic.values()].map((s: any) => s.id));
     const samples = {
       blockSamples: [] as any[],
@@ -293,11 +303,14 @@ export function registerExperimentConfig(
           .join("、"),
         ratio: config.parallel.rate,
         experimentStartedAt: new Date().toISOString(),
+        workflowVersion: 2,
+        experimentState: "已提交",
         phase: "审批",
-        status: "待审批",
+        status: "实验已提交",
       },
       "提交实验配置",
     );
     res.json({ task, config });
   });
+  return { context };
 }

@@ -120,7 +120,7 @@ export function ModulePage({ module: m }: { module: Module }) {
       nav("/featureDetails?id=" + r.id);
       return;
     }
-    if (r.sourceImported && m.kind === "release") {
+    if (m.kind === "release") {
       nav("/release/detail?id=" + r.id);
       return;
     }
@@ -263,53 +263,88 @@ export function ModulePage({ module: m }: { module: Module }) {
           </Space>
         ) : m.kind === "release" ? (
           <Space wrap>
-            <Button size="small" onClick={() => setDetail(r)}>
+            <Button
+              size="small"
+              onClick={() => nav("/release/detail?id=" + r.id)}
+            >
               变更内容
             </Button>
-            {r.phase === "实验" && (
-              <Button size="small" onClick={() => setDetail(r)}>
-                去实验
+            {r.phase === "实验" && r.status !== "已中止" && (
+              <>
+                <Button
+                  size="small"
+                  onClick={() => nav("/release/experiment-config?id=" + r.id)}
+                >
+                  去实验
+                </Button>
+                <Button
+                  size="small"
+                  danger
+                  onClick={() =>
+                    nav("/release/gray-config?id=" + r.id + "&deployMode=0")
+                  }
+                >
+                  紧急变更
+                </Button>
+              </>
+            )}
+            {!!r.experimentStartedAt && (
+              <Button
+                size="small"
+                onClick={() => nav("/release/experiment-detail?id=" + r.id)}
+              >
+                实验详情
               </Button>
             )}
             {r.phase === "审批" && (
-              <Button size="small" onClick={() => setDetail(r)}>
-                审批详情
-              </Button>
-            )}
-            {r.phase === "灰度" && (
               <Button
                 size="small"
                 onClick={() =>
-                  mutation("/releases/" + r.id + "/advance", "POST", {
-                    action: "下一步",
-                  })
+                  nav(
+                    "/release/" +
+                      (r.approvalState === "待审批"
+                        ? "approval-detail"
+                        : "gray-config") +
+                      "?id=" +
+                      r.id,
+                  )
                 }
               >
-                下一步
+                {r.approvalState === "待审批" ? "审批详情" : "去变更"}
               </Button>
             )}
-            {r.phase === "灰度" && (
-              <Popconfirm
-                title="中止本地示例变更？"
-                onConfirm={() =>
-                  mutation("/releases/" + r.id + "/advance", "POST", {
-                    action: "中止",
+            {(r.phase === "灰度" || r.phase === "完成") && (
+              <Button
+                size="small"
+                onClick={() => nav("/release/gray-detail?id=" + r.id)}
+              >
+                灰度详情
+              </Button>
+            )}
+            {r.status === "已中止" && (
+              <Button
+                size="small"
+                onClick={() =>
+                  mutation("/releases/" + r.id + "/workflow/action", "POST", {
+                    action: "重启",
                   })
                 }
               >
-                <Button size="small">中止</Button>
-              </Popconfirm>
+                重启
+              </Button>
             )}
-            {r.phase === "完成" && (
+            {r.groupChangesApplied && r.status !== "已回滚" && (
               <Popconfirm
-                title="回滚本地示例变更？"
+                title="确定回滚已发布变更？"
                 onConfirm={() =>
-                  mutation("/releases/" + r.id + "/advance", "POST", {
+                  mutation("/releases/" + r.id + "/workflow/action", "POST", {
                     action: "回滚",
                   })
                 }
               >
-                <Button size="small">回滚</Button>
+                <Button size="small" danger>
+                  回滚
+                </Button>
               </Popconfirm>
             )}
           </Space>
@@ -769,23 +804,7 @@ export function ReleaseDetail({
   row: Row;
   onChanged: () => void;
 }) {
-  const { message } = App.useApp();
-  const [experiment, setExperiment] = useState("双跑");
-  const [ratio, setRatio] = useState(10);
-  const [urgentReason, setUrgentReason] = useState("");
-  async function advance(action: string) {
-    try {
-      await api("/releases/" + row.id + "/advance", "POST", {
-        action,
-        experiment,
-        ratio,
-      });
-      onChanged();
-      message.success("变更任务已更新");
-    } catch (e: any) {
-      message.error(e.message);
-    }
-  }
+  const nav = useNavigate();
   return (
     <>
       <Alert
@@ -839,97 +858,55 @@ export function ReleaseDetail({
             key: "experiment",
             label: "实验详情",
             children: (
-              <Section title="实验配置">
-                <Space direction="vertical">
-                  <Select
-                    value={experiment}
-                    onChange={setExperiment}
-                    options={["双跑", "回溯", "样本实验"].map((value) => ({
-                      value,
-                      label: value,
-                    }))}
-                  />
-                  <Select
-                    value={ratio}
-                    onChange={setRatio}
-                    options={[1, 5, 10, 25, 50, 100].map((value) => ({
-                      value,
-                      label: `${value}%`,
-                    }))}
-                  />
-                  <Button
-                    type="primary"
-                    disabled={row.phase !== "实验"}
-                    onClick={() => advance("实验")}
-                  >
-                    启动实验
-                  </Button>
-                </Space>
-              </Section>
+              <Button
+                type="primary"
+                onClick={() =>
+                  nav(
+                    "/release/" +
+                      (row.experimentStartedAt
+                        ? "experiment-detail"
+                        : "experiment-config") +
+                      "?id=" +
+                      row.id,
+                  )
+                }
+              >
+                查看实验详情与配置
+              </Button>
             ),
           },
           {
             key: "approval",
             label: "审批详情",
             children: (
-              <Section title="审批阶段">
-                <p>
-                  当前状态：
-                  {row.phase === "审批" ? "待审批" : "当前阶段为 " + row.phase}
-                </p>
-                <Button
-                  disabled={row.phase !== "审批"}
-                  onClick={() => advance("审批")}
-                >
-                  审批通过
-                </Button>
-              </Section>
+              <Button
+                type="primary"
+                onClick={() => nav("/release/approval-detail?id=" + row.id)}
+              >
+                查看审批详情
+              </Button>
             ),
           },
           {
             key: "gray",
             label: "灰度详情",
             children: (
-              <Section title="灰度发布">
-                {row.urgentMode && row.phase === "实验" && (
-                  <>
-                    <Alert
-                      type="warning"
-                      message="紧急变更将跳过实验配置，仍须审核与灰度发布。"
-                    />
-                    <Input.TextArea
-                      style={{ margin: "16px 0" }}
-                      value={urgentReason}
-                      onChange={(e) => setUrgentReason(e.target.value)}
-                      placeholder="请输入紧急变更原因"
-                    />
-                    <Button
-                      type="primary"
-                      danger
-                      onClick={async () => {
-                        try {
-                          await api("/changes/" + row.id + "/urgent", "POST", {
-                            reason: urgentReason,
-                          });
-                          onChanged();
-                        } catch (e: any) {
-                          message.error(e.message);
-                        }
-                      }}
-                    >
-                      提交紧急变更
-                    </Button>
-                  </>
-                )}
-                <p>灰度进度：{row.progress || 0}%</p>
-                <Button
-                  type="primary"
-                  disabled={row.phase !== "灰度"}
-                  onClick={() => advance("下一步")}
-                >
-                  下一步（25%）
-                </Button>
-              </Section>
+              <Button
+                type="primary"
+                onClick={() =>
+                  nav(
+                    "/release/" +
+                      (["灰度", "完成"].includes(row.phase || "")
+                        ? "gray-detail"
+                        : "gray-config") +
+                      "?id=" +
+                      row.id +
+                      (row.urgentMode ? "&deployMode=0" : ""),
+                  )
+                }
+              >
+                查看灰度配置与发布进度
+              </Button>
             ),
           },
         ]}
