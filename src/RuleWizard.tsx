@@ -1,3 +1,4 @@
+import {TestPackages} from "./TestPackages";
 import {
   conditionExpression,
   operatorsFor,
@@ -673,6 +674,7 @@ export function RuleWizard({
                 { value: false, label: "不命中" },
               ]}
             />
+            <TestPackages/>
             <Button type="primary" loading={running} onClick={run}>
               执行测试
             </Button>

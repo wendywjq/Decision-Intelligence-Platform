@@ -1,3 +1,4 @@
+import {TestPackages} from "./TestPackages";
 import { Link } from "./navigation";
 import { ruleOperator } from "./rule-operators";
 import { RiskTagChips } from "./RiskTagSelect";
@@ -410,6 +411,7 @@ export function RuleDetail() {
         }
       >
         <Form layout="vertical">
+          <TestPackages/>
           <Form.Item label="添加方式">
             <Radio.Group
               value={mode}

@@ -1,3 +1,4 @@
+import { FeatureCreate } from "./FeatureCreate";
 import {
   ChangeEnvironmentBar,
   ChangeEnvironmentLauncher,
@@ -232,6 +233,7 @@ export default function App() {
             path="/releaseList"
             element={<Navigate to="/release/list" replace />}
           />
+          <Route path="/featureInfo" element={<FeatureCreate />} />
           <Route path="/featureDetails" element={<ImportedFeaturePage />} />
           <Route path="/layerScene/detail" element={<SourceGraphPage />} />
           <Route
@@ -260,7 +262,10 @@ export default function App() {
             element={
               <div className="help">
                 <h1>智能决策平台 · 使用说明</h1>
-                <p>本项目使用示例业务数据，独立运行，不连接 Zeus 生产系统。</p>
+                <p>
+                  本项目在本地运行。规则历史与累计配置可使用本机已登录的 Zeus
+                  会话补取。
+                </p>
                 <p>
                   场景：点击名称展开规则配置；可添加规则、修改状态和决策。规则：点击名称进入详情，编辑表达式后添加
                   JSON 测试用例。

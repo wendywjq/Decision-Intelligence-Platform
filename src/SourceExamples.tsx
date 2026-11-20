@@ -1,3 +1,5 @@
+import { ImportedRuleTest } from "./ImportedRuleTest";
+import { SourceSync } from "./SourceSync";
 import { ruleOperator } from "./rule-operators";
 import { CHANGE_EVENT } from "./change-context";
 import { RiskTagChips } from "./RiskTagSelect";
@@ -618,7 +620,7 @@ export function ImportedSceneRules({
 export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
   const { message } = App.useApp();
   const navigate = useNavigate();
-  const { data, error } = useRemote<any>("/source/archive/rule/" + id);
+  const { data, error, reload } = useRemote<any>("/source/archive/rule/" + id);
   const refs = useRemote<{ items: Row[] }>("/source/rules/" + id + "/features");
   const usage = useRemote<{ items: any[] }>(
     "/source/rules/" + id + "/references",
@@ -763,6 +765,7 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
                   )}
                 </Section>
                 <Section title="测试用例列表">
+                  <ImportedRuleTest id={id} />
                   <Table<any>
                     rowKey={(r, i) => String(r.id ?? i)}
                     dataSource={current?.testCaseList || []}
@@ -814,6 +817,8 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
                 row={row}
                 logic={rule}
                 versions={detail?.versionInfo}
+                refresh={reload}
+                autoSync={!!data?.canSyncSource}
                 features={refs.data?.items || []}
               />
             ),
@@ -873,7 +878,15 @@ function VersionLogic({
     </div>
   );
 }
-function RuleVersionHistory({ id, row, logic, versions, features }: any) {
+function RuleVersionHistory({
+  id,
+  row,
+  logic,
+  versions,
+  features,
+  refresh,
+  autoSync,
+}: any) {
   const local = useRemote<any>(entityPath("rulePage", id) + "/versions");
   const rows = [
     ...(local.data?.items || []).map((v: any) => ({
@@ -951,7 +964,21 @@ function RuleVersionHistory({ id, row, logic, versions, features }: any) {
         pagination={{ pageSize: 10 }}
       />
       {!versions?.length && (
-        <p className="muted">当前快照未收录该规则的 Zeus 历史版本。</p>
+        <div className="muted">
+          {Array.isArray(versions) ? (
+            "Zeus 暂无历史版本"
+          ) : (
+            <>
+              当前快照尚未收录历史版本。{" "}
+              <SourceSync
+                kind="rule"
+                id={id}
+                refresh={refresh}
+                auto={autoSync}
+              />
+            </>
+          )}
+        </div>
       )}
     </>
   );

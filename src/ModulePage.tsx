@@ -68,7 +68,9 @@ export function ModulePage({ module: m }: { module: Module }) {
   const [searchMode, setSearchMode] = useState("模糊搜索");
   const [batchMode, setBatchMode] = useState(false);
   const [chart, setChart] = useState<Row>();
-  const [expandedScenes, setExpandedScenes] = useState<readonly React.Key[]>([]);
+  const [expandedScenes, setExpandedScenes] = useState<readonly React.Key[]>(
+    [],
+  );
   useEffect(() => {
     if (params.get("id")) {
       setFilters({ id: params.get("id")! });
@@ -121,7 +123,7 @@ export function ModulePage({ module: m }: { module: Module }) {
       nav("/fetcher/edit?id=" + r.id);
       return;
     }
-    if (r.sourceImported && m.key === "featureService") {
+    if ((r.sourceImported || r.featureForm) && m.key === "featureService") {
       nav("/featureDetails?id=" + r.id);
       return;
     }
@@ -367,7 +369,10 @@ export function ModulePage({ module: m }: { module: Module }) {
             <button
               className="text-link"
               onClick={() => {
-                if (m.key === "rulesFuseList") nav("/rulesFuseAdd?id=" + r.id);
+                if (m.key === "featureService" && r.featureForm)
+                  nav("/featureInfo?type=edit&id=" + r.id);
+                else if (m.key === "rulesFuseList")
+                  nav("/rulesFuseAdd?id=" + r.id);
                 else if (m.kind === "audit") setDetail(r);
                 else {
                   setEdit(r);
@@ -455,6 +460,10 @@ export function ModulePage({ module: m }: { module: Module }) {
               }
               if (m.kind === "rule") {
                 nav("/addRulePage");
+                return;
+              }
+              if (m.key === "featureService") {
+                nav("/featureInfo?type=add");
                 return;
               }
               setEdit(undefined);
@@ -649,7 +658,11 @@ export function ModulePage({ module: m }: { module: Module }) {
                     m.key === "rulesGroup" ? (
                       <GroupRules id={r.id} />
                     ) : r.sourceImported ? (
-                      <ImportedSceneRules module={m.key} id={r.id} flatGroups={flat} />
+                      <ImportedSceneRules
+                        module={m.key}
+                        id={r.id}
+                        flatGroups={flat}
+                      />
                     ) : (
                       <SceneRules module={m.key} id={r.id} />
                     ),

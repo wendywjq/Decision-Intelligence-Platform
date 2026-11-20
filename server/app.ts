@@ -1,3 +1,7 @@
+import { registerFeatureConfig } from "./feature-config.ts";
+import { canSyncSource, registerSourceSync } from "./source-sync.ts";
+import { resourceLookup, registerRuleResources } from "./rule-resources.ts";
+import { runAviator } from "./aviator.ts";
 import { executableRule, evaluateWithCatalog } from "./evaluate-rule.ts";
 import { registerReleaseWorkflow } from "./release-workflow.ts";
 import { registerExperimentConfig } from "./experiment-config.ts";
@@ -20,6 +24,18 @@ const bodySchema = z
 export function createApp(db: Database.Database) {
   const app = express();
   app.use(express.json({ limit: "1mb" }));
+  registerRuleResources(app, db);
+  registerSourceSync(app, db);
+  app.post("/api/feature-logic/test", (req, res) => {
+    try {
+      const { expression, input } = req.body;
+      if (!input || typeof input !== "object" || Array.isArray(input))
+        throw Error("请输入 JSON 对象");
+      return res.json({ value: runAviator(expression, input) });
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message });
+    }
+  });
   const get = (module: string, id: number) => {
     const r = db
       .prepare("SELECT data FROM entities WHERE module=? AND id=?")
@@ -30,8 +46,12 @@ export function createApp(db: Database.Database) {
     expression: string,
     input: Record<string, unknown>,
   ) =>
-    evaluateWithCatalog(expression, input, (id) =>
-      executableRule(db, get("rulePage", id)),
+    evaluateWithCatalog(
+      expression,
+      input,
+      (id) => executableRule(db, get("rulePage", id)),
+      [],
+      resourceLookup(db),
     );
   const audit = (m: string, id: number, name: string, action: string) =>
     db
@@ -303,6 +323,7 @@ export function createApp(db: Database.Database) {
     })();
     res.status(201).json(result.rule);
   });
+  registerFeatureConfig(app, db, save);
   registerDetailRoutes(app, db);
   const experiments = registerExperimentConfig(app, db, save);
   registerReleaseWorkflow(app, db, {
@@ -566,7 +587,15 @@ export function createApp(db: Database.Database) {
           versionInfo: JSON.parse(versions),
         };
     }
-    res.json(archive);
+    if (req.params.kind === "feature" && archive.detail?.type === 2) {
+      const captured = db
+        .prepare(
+          "SELECT data FROM source_detail_objects WHERE kind='accumulation' AND id=?",
+        )
+        .get(req.params.id) as any;
+      if (captured) archive.detail.accumulation = JSON.parse(captured.data);
+    }
+    res.json({ ...archive, canSyncSource });
   });
   app.get("/api/source/configs/:module/:id", (req, res) => {
     const rows = db
@@ -1088,7 +1117,20 @@ export function createApp(db: Database.Database) {
       if (typeof input === "string") input = JSON.parse(input);
       if (!input || typeof input !== "object" || Array.isArray(input))
         throw Error("请输入JSON对象");
-      const actual = evaluateExpression(req.body.expression, input),
+      const taskId = Number(req.query.changeTaskId);
+      const actual = taskId
+          ? evaluateWithCatalog(
+              req.body.expression,
+              input,
+              (ruleId) =>
+                executableRule(
+                  db,
+                  changes.ruleView(changes.task(taskId), ruleId),
+                ),
+              [],
+              resourceLookup(db),
+            )
+          : evaluateExpression(req.body.expression, input),
         expected = req.body.expected !== false;
       return res.json({ input, actual, expected, passed: actual === expected });
     } catch (e: any) {

@@ -1,0 +1,45 @@
+[
+  {
+    "parts": [
+      "29a4395b3b451498-000.bin",
+      "29a4395b3b451498-001.bin"
+    ],
+    "sha256": "29a4395b3b45149815f4445433dd8eb0847a678c18667d90e8b65b0fd3878040"
+  },
+  {
+    "parts": [
+      "ac928ebaff902e8a-000.bin",
+      "ac928ebaff902e8a-001.bin",
+      "ac928ebaff902e8a-002.bin",
+      "ac928ebaff902e8a-003.bin",
+      "ac928ebaff902e8a-004.bin",
+      "ac928ebaff902e8a-005.bin",
+      "ac928ebaff902e8a-006.bin",
+      "ac928ebaff902e8a-007.bin"
+    ],
+    "sha256": "ac928ebaff902e8a22e9c033aecf3418a53cae5f763c31c4b67e02b6b92d6acd"
+  },
+  {
+    "parts": [
+      "8815e94e41005952-000.bin"
+    ],
+    "sha256": "8815e94e41005952069d25056151ef7d71adb34075581117bfa4832e2c8792c6"
+  },
+  {
+    "parts": [
+      "5272e6404be5701e-000.bin",
+      "5272e6404be5701e-001.bin",
+      "5272e6404be5701e-002.bin",
+      "5272e6404be5701e-003.bin",
+      "5272e6404be5701e-004.bin",
+      "5272e6404be5701e-005.bin"
+    ],
+    "sha256": "5272e6404be5701ed2a4ff8fa97b770b4156281ed39486cac44e4ff205a350d0"
+  },
+  {
+    "parts": [
+      "3511cb0757bfb2c4-000.bin"
+    ],
+    "sha256": "3511cb0757bfb2c45cd3fe610c33dd1d972b2ce16ce0baf8483b7effbd0b5a22"
+  }
+]

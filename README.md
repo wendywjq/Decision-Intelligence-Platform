@@ -58,7 +58,11 @@ npm start         # 构建后，API 同时提供 dist 静态资源，端口 3001
 | RequestId       | `demo-request-001` / `demo-request-002` |
 | 累计因子 / 主体 | `requestCount` / `demo`                 |
 
-示例执行引擎支持单变量比较、`&&`、`||`，不执行任意 JavaScript。它不等同于完整 Aviator / SQL / 近线 UDF 引擎。
+规则测试支持按输入执行交互式条件、列表元素和嵌套子规则。可在「本地测试包」按包 ID 导入词条、图片 SHA-256 或图片 URL。词包按子串匹配，图包按内容摘要或已登记标识精确匹配。来源目录里的包名用于选择，测试数据按 ID 单独保存在 SQLite。
+
+使用表达式模式和特征逻辑测试时，请安装 JDK 17 或以上版本，设置 `JAVA_HOME` 后运行 `npm run setup:aviator`。脚本从 Maven Central 下载固定版本、校验摘要并编译本地解释器。AviatorScript 在独立 JVM 中执行，包含常用 Zeus 扩展函数。依赖尚未实现的内部函数时，测试界面会显示函数错误。
+
+规则的「版本信息」与累计特征的「逻辑信息」可读取随仓库提供的快照。已安装 Zeus 认证技能且拥有空间 35 会话的开发者可在详情页补取缺失数据，或运行 `python3 scripts/sync-rule-feature-details.py` 顺序补齐目录。在成功响应后至少间隔一秒，遇到限流或网关错误会退避。每个对象单独提交到 SQLite，中断后重跑可续采。`--pack` 将已同步的详情打包供离线使用。
 
 ## 结构
 

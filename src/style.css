@@ -867,3 +867,14 @@ body:has(.change-environment-bar) .topbar>.brand>span,body:has(.change-environme
 .feature-dependencies { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .feature-logic .code-editor { white-space: pre-wrap; overflow-wrap: anywhere; }
 .feature-logic .code-editor .ant-typography { color: inherit; font-family: inherit; }
+
+.feature-create {background:white; min-height:100%; padding-bottom:24px}
+.feature-create .page-heading {position:sticky;top:48px;background:white;z-index:3;border-bottom:1px solid #e6e8eb}
+.feature-create .feature-guide {display:block;text-align:right;margin:12px 24px}
+.feature-create .detail-section {padding:16px 26px}
+.feature-create .ant-form-item {max-width:940px;margin-bottom:18px}
+.feature-create .ant-form-item-control-input-content>.ant-select,.feature-create .ant-form-item-control-input-content>.ant-input {max-width:660px}
+.feature-create .ant-space-compact .ant-form-item {margin:0}
+.feature-create .monospace {font-family:monospace;margin-top:6px}
+
+body:has(.change-environment-bar) .feature-create .page-heading {top:100px}

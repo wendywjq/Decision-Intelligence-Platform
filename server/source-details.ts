@@ -1,3 +1,4 @@
+import { testPackageExamples } from "../src/rule-test-examples.ts";
 import {
   expressionFeatureNames,
   featureDependencyNames,
@@ -336,11 +337,27 @@ export function registerDetailRoutes(app: Express, db: Database.Database) {
     const term = String(req.query.q || "")
       .trim()
       .toLowerCase();
-    const items = [];
+    const kind = req.query.type === "picture" ? "picture" : "bag";
+    const local = db
+      .prepare(
+        "SELECT id FROM rule_test_packages WHERE kind=? AND instr(id,?)>0 ORDER BY id LIMIT 50",
+      )
+      .all(kind, term) as { id: string }[];
+    const items = local.map(({ id }) => ({
+      value: id,
+      label:
+        id +
+        " " +
+        (id === testPackageExamples[kind].id
+          ? testPackageExamples[kind].label
+          : "本地测试包"),
+    }));
+    const seen = new Set(local.map((row) => row.id));
     for (const [id, name] of packageOptions[
       req.query.type === "picture" ? 1 : 0
     ]) {
-      if ((id + " " + name).toLowerCase().includes(term))
+      if (items.length >= 50) break;
+      if (!seen.has(id) && (id + " " + name).toLowerCase().includes(term))
         items.push({
           value: id,
           label: name.includes(id) ? name : id + " " + name,

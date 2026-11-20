@@ -95,6 +95,12 @@ export function conditionExpression(c: any): string {
     const numeric =
       ["Integer", "Float", "Double", "Long"].includes(c.dataType) ||
       /(?:greater|less)/i.test(op.value);
+    if (
+      c.dataType === "Boolean" &&
+      op.operand === "value" &&
+      ["true", "false"].includes(String(v))
+    )
+      return String(v);
     if (numeric) {
       if (!Number.isFinite(Number(v))) throw Error("右变量必须为数值");
       return String(Number(v));

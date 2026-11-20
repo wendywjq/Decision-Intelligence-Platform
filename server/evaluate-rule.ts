@@ -1,3 +1,4 @@
+import { runAviator } from "./aviator.ts";
 import type Database from "better-sqlite3";
 import { ruleOperator } from "../src/rule-operators.ts";
 import { runInNewContext } from "node:vm";
@@ -34,8 +35,13 @@ export function executableRule(db: Database.Database, rule: any) {
   };
   const parse = (v: any) =>
     typeof v === "string" ? JSON.parse(v || "[]") : v || [];
-  const parts = conditions.map((c: any, i: number) => {
-    if (Number(c.index) !== i + 1 || !ruleOperator(c.operatorName))
+  const parts = new Map<number, string>();
+  for (const c of conditions) {
+    if (
+      !Number.isInteger(Number(c.index)) ||
+      parts.has(Number(c.index)) ||
+      !ruleOperator(c.operatorName)
+    )
       throw Error("本地不支持此交互式条件");
     const left = parse(c.leftParamValue),
       right = parse(c.rightParamValue);
@@ -55,8 +61,8 @@ export function executableRule(db: Database.Database, rule: any) {
     ];
     if (c.operatorName.endsWith("_hitRule") && right[0]?.appendix)
       args.push(JSON.stringify(right[0].appendix));
-    return c.operatorName + "(" + args.join(",") + ")";
-  });
+    parts.set(Number(c.index), c.operatorName + "(" + args.join(",") + ")");
+  }
   return { ...rule, expression: compileConditionLogic(rule.expression, parts) };
 }
 // Interpret only supported predicates. Never execute stored Aviator as JavaScript.
@@ -65,8 +71,36 @@ export function evaluateWithCatalog(
   input: Record<string, unknown>,
   getRule: (id: number) => any,
   parents: number[] = [],
+  resources?: (op: string, left: unknown, ids: unknown[]) => boolean,
+  budget = { left: 2048, until: Date.now() + 4000 },
 ): boolean {
-  return evaluateRuleExpression(expression, input, (op, left, args) => {
+  if (--budget.left < 0 || Date.now() > budget.until)
+    throw Error("子规则计算超出本地测试上限");
+  let source = expression.trim();
+  if (source.startsWith("{")) {
+    try {
+      const def = JSON.parse(source);
+      if (typeof def.expression === "string") source = def.expression;
+    } catch {
+      /* Aviator also supports blocks. */
+    }
+  }
+  // Plain comparisons retain the built-in evaluator on installations without a JDK.
+  const syntax = source
+    .replace(/^##[^\n]*/gm, "")
+    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "''");
+  const functions = [...syntax.matchAll(/\b([A-Za-z_]\w*)\s*\(/g)];
+  const hasInteractivePredicate = functions.some((m) => !!ruleOperator(m[1]));
+  const advanced =
+    /\b(?:let|for|while|if|elsif|else|fn|lambda)\b|[\[\]+*/%?:{}]|;\s*\S|\w\s*-\s*\w|[a-zA-Z_]\w*\./.test(
+      syntax,
+    ) || functions.some((m) => m[1] !== "return" && !ruleOperator(m[1]));
+  if (advanced && !hasInteractivePredicate) {
+    const result = runAviator(source, input);
+    if (typeof result !== "boolean") throw Error("规则表达式必须返回布尔值");
+    return result;
+  }
+  return evaluateRuleExpression(source, input, (op, left, args) => {
     if (op === "regexMatch") {
       if (typeof left !== "string") throw Error("模糊匹配需要字符串");
       return args.some((pattern) =>
@@ -90,11 +124,17 @@ export function evaluateWithCatalog(
       const context = param
         ? { ...input, [String(param)]: left }
         : { ...input, ...(left as object) };
-      return evaluateWithCatalog(rule.expression, context, getRule, [
-        ...parents,
-        id,
-      ]);
+      return evaluateWithCatalog(
+        rule.expression,
+        context,
+        getRule,
+        [...parents, id],
+        resources,
+        budget,
+      );
     }
+    if (resources && ["hitKeywordBag", "hitPictureBag"].includes(op))
+      return resources(op, left, args);
     throw Error(
       "本地未接入" +
         (op === "hitKeywordBag" ? "词包" : "图包") +

@@ -18,9 +18,21 @@ def get(path, params, key=None, refresh=False, attempt=0):
   except ValueError:last=0
   delay=last+1.0-time.time()
   if delay>0:time.sleep(delay)
-  clock.seek(0);clock.truncate();clock.write(str(time.time()));clock.flush()
-  fcntl.flock(clock,fcntl.LOCK_UN)
- r=subprocess.run(['bash',str(AUTH),'prod-cn',url,'--max-time','90','-H','M-APPKEY: fe_zeus','-H','zeus: true','-w','\nZEUS_HTTP_STATUS:%{http_code}'],capture_output=True,text=True,timeout=100)
+  cooldown=0
+  try:
+   r=subprocess.run(['bash',str(AUTH),'prod-cn',url,'--max-time','90','-H','M-APPKEY: fe_zeus','-H','zeus: true','-w','\nZEUS_HTTP_STATUS:%{http_code}'],capture_output=True,text=True,timeout=100)
+   raw,_,code=r.stdout.rpartition('\nZEUS_HTTP_STATUS:')
+   if code.strip() in ('429','502','503','504'):
+    cooldown=60*(attempt+1)
+   elif r.returncode:
+    cooldown=30*(attempt+1)
+   else:
+    try:
+     response=json.loads(raw)
+     if response.get('code')!=0 and any(term in str(response.get('desc','')).lower() for term in ['rate limit','too many requests','频繁','限流']):cooldown=60
+    except (ValueError,AttributeError): pass
+  finally:
+   clock.seek(0);clock.truncate();clock.write(str(time.time()+cooldown));clock.flush()
  body,_,status=r.stdout.rpartition('\nZEUS_HTTP_STATUS:')
  status=status.strip()
  if r.returncode:

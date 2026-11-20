@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import { syncFullCatalogFixture } from "./full-catalog.ts";
 import { syncDetailFixtures } from "./source-details.ts";
 import Database from "better-sqlite3";
@@ -311,6 +313,32 @@ export function openDatabase(
   );
   if (path === (process.env.DATABASE_PATH || "data/zeus.sqlite")) {
     syncFullCatalogFixture(db);
+    const detailDir = new URL(
+      "../fixtures/rule-feature-details/",
+      import.meta.url,
+    );
+    const manifest = JSON.parse(
+      readFileSync(new URL("index.json", detailDir), "utf8"),
+    ) as { parts: string[]; sha256: string }[];
+    const insertDetail = db.prepare(
+      "INSERT OR IGNORE INTO source_detail_objects VALUES(?,?,?)",
+    );
+    db.transaction(() => {
+      for (const group of manifest) {
+        const key = "rule-feature-pack:" + group.sha256;
+        if (db.prepare("SELECT 1 FROM settings WHERE key=?").get(key)) continue;
+        const bytes = Buffer.concat(
+          group.parts.map((p) => readFileSync(new URL(p, detailDir))),
+        );
+        if (createHash("sha256").update(bytes).digest("hex") !== group.sha256)
+          throw Error("规则与累计详情分片校验失败");
+        for (const [kind, id, value] of JSON.parse(
+          gunzipSync(bytes).toString("utf8"),
+        ))
+          insertDetail.run(kind, id, JSON.stringify(value));
+        db.prepare("INSERT INTO settings VALUES(?,?)").run(key, "true");
+      }
+    }).immediate();
     reconcileTypedReferences(db);
     const snapshot = JSON.parse(
       readFileSync(
@@ -325,7 +353,7 @@ export function openDatabase(
     const f = snapshot.detail;
     db.transaction(() => {
       db.prepare(
-        "INSERT OR REPLACE INTO source_detail_objects VALUES('ruleVersions','2492070',?)",
+        "INSERT OR IGNORE INTO source_detail_objects VALUES('ruleVersions','2492070',?)",
       ).run(history);
       const marker = "captured-feature:5004177";
       if (db.prepare("SELECT 1 FROM settings WHERE key=?").get(marker)) return;

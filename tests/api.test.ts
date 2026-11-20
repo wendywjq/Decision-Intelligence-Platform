@@ -1,6 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApp, evaluateExpression } from "../server/app.ts";
@@ -306,3 +306,86 @@ test("large catalog SQL paging preserves literal search, metadata filters and ex
   assert.equal(injected.status, 200);
   assert.equal(injected.data.total, 0);
 });
+
+test("test packages persist and execute in a nested rule, including exact image contents", async () => {
+  await request("/rule-test-packages/bag/70001", "PUT", {
+    entries: ["金桂", "木樨"],
+  });
+  const image = "data:image/png;base64,YWJj";
+  await request("/rule-test-packages/picture/70002", "PUT", {
+    entries: [image],
+  });
+  const child = await request("/entities/rulePage", "POST", {
+    name: "测试词条",
+    expression: 'hitKeywordBag(item,"70001")',
+  });
+  const expression =
+    'any_hitRule(texts,"' +
+    child.data.id +
+    '","item") && hitPictureBag(image,"70002")';
+  for (const [texts, picture, expected] of [
+    [
+      ["桂花", "金桂树"],
+      "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      true,
+    ],
+    [["桂花"], image, false],
+    [["木樨"], "other-image", false],
+  ]) {
+    const r = await request("/rule-drafts/test", "POST", {
+      expression,
+      input: { texts, image: picture },
+      expected,
+    });
+    assert.equal(r.status, 200);
+    assert.equal(r.data.actual, expected);
+    assert.equal(r.data.passed, true);
+  }
+  const missing = await request("/rule-drafts/test", "POST", {
+    expression: 'hitKeywordBag(text,"0000")',
+    input: { text: "0000" },
+  });
+  assert.equal(missing.status, 400);
+  assert.match(missing.data.error, /缺少词包/);
+  assert.equal(
+    (await request("/source/rule-packages?q=70001")).data.items[0].value,
+    "70001",
+  );
+});
+
+test(
+  "AviatorScript runs scripts in imported subrules and maps target features over lists",
+  { skip: !existsSync(new URL("../data/aviator/java-path", import.meta.url)) },
+  async () => {
+    const expression =
+      "##exp - 5\nlet total=0; for n in scores { total=total+n; } return total>3;";
+    const child = await request("/entities/rulePage", "POST", {
+      name: "累计分数",
+      expression: JSON.stringify({ expression }),
+    });
+    for (const [groups, expected] of [
+      [[[1, 3]], true],
+      [[[1, 2]], false],
+    ]) {
+      const r = await request("/rule-drafts/test", "POST", {
+        expression: 'any_hitRule(groups,"' + child.data.id + '","scores")',
+        input: { groups },
+        expected,
+      });
+      assert.equal(r.status, 200);
+      assert.equal(r.data.actual, expected);
+    }
+    const target = await request("/entities/featureService", "POST", {
+      name: "本地衍生",
+      type: "衍生特征",
+      featureDefinition: { type: 1, expression: "return score * 2;" },
+    });
+    const r = await request("/feature-logic/map-test", "POST", {
+      targetId: target.data.id,
+      param: "score",
+      source: "scores",
+      input: { scores: [2, 3] },
+    });
+    assert.deepEqual(r.data.value, [4, 6]);
+  },
+);

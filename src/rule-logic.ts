@@ -2,7 +2,7 @@ import { matchOperator, type LookupOperator } from "./rule-operators.ts";
 /** Parse numbered condition logic. No eval or JavaScript execution. */
 export function compileConditionLogic(
   logic: string,
-  conditions: string[],
+  conditions: string[] | Map<number, string>,
 ): string {
   const text = String(logic || "").replace(/\/\*[\s\S]*?\*\//g, "");
   const tokens = text.match(/\d+|&&|\|\||!|\(|\)/g) || [];
@@ -19,9 +19,11 @@ export function compileConditionLogic(
     }
     if (!t || !/^\d+$/.test(t)) throw Error("请输入有效的条件间逻辑");
     const n = Number(t);
-    if (n < 1 || n > conditions.length)
-      throw Error("条件编号 " + n + " 不存在");
-    return "(" + conditions[n - 1] + ")";
+    const condition = Array.isArray(conditions)
+      ? conditions[n - 1]
+      : conditions.get(n);
+    if (n < 1 || !condition) throw Error("条件编号 " + n + " 不存在");
+    return "(" + condition + ")";
   };
   const and = (): string => {
     let v = atom();
@@ -69,15 +71,15 @@ export function evaluateRuleExpression(
     pos = pattern.lastIndex;
   }
   let i = 0;
-  const value = (): unknown => {
+  const value = (active: boolean): unknown => {
     const t = tokens[i++];
     if (!t) throw Error("缺少表达式操作数");
     if (t === "(") {
-      const v = or();
+      const v = or(active);
       if (tokens[i++] !== ")") throw Error("表达式括号不匹配");
       return v;
     }
-    if (t === "!") return !Boolean(value());
+    if (t === "!") return !Boolean(value(active));
     if (t === "true") return true;
     if (t === "false") return false;
     if (t === "null" || t === "nil") return null;
@@ -87,25 +89,27 @@ export function evaluateRuleExpression(
     if (!/^[A-Za-z_$][\w$]*$/.test(t)) throw Error("缺少表达式操作数");
     if (tokens[i] === "(") {
       i++;
-      const left = value(),
+      const left = value(active),
         args: unknown[] = [];
       while (tokens[i] === ",") {
         i++;
-        args.push(value());
+        args.push(value(active));
       }
       if (tokens[i++] !== ")") throw Error("操作符参数格式错误");
-      return matchOperator(t, left, args, lookup);
+      return active ? matchOperator(t, left, args, lookup) : false;
     }
+    if (!active) return undefined;
     if (!Object.prototype.hasOwnProperty.call(input, t))
       throw Error("缺少输入参数：" + t);
     return input[t];
   };
-  const comparison = (): boolean => {
-    const left = value(),
+  const comparison = (active: boolean): boolean => {
+    const left = value(active),
       op = tokens[i];
     if (![">", ">=", "<", "<=", "==", "!="].includes(op)) return Boolean(left);
     i++;
-    const right = value();
+    const right = value(active);
+    if (!active) return false;
     if (op === "==") return left === right;
     if (op === "!=") return left !== right;
     if (typeof left !== "number" || typeof right !== "number")
@@ -118,25 +122,25 @@ export function evaluateRuleExpression(
           ? left < right
           : left <= right;
   };
-  const and = (): boolean => {
-    let v = comparison();
+  const and = (active: boolean): boolean => {
+    let v = comparison(active);
     while (tokens[i] === "&&") {
       i++;
-      const next = comparison();
+      const next = comparison(active && v);
       v = v && next;
     }
     return v;
   };
-  const or = (): boolean => {
-    let v = and();
+  const or = (active: boolean): boolean => {
+    let v = and(active);
     while (tokens[i] === "||") {
       i++;
-      const next = and();
+      const next = and(active && !v);
       v = v || next;
     }
     return v;
   };
-  const result = or();
+  const result = or(true);
   if (i !== tokens.length) throw Error("本地表达式引擎不支持此语法");
   return result;
 }

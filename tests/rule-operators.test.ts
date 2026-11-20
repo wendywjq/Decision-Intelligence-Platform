@@ -90,3 +90,18 @@ test("local test evaluates list and unary predicates and binds the list element 
     /循环/,
   );
 });
+
+test("short-circuited conditions do not need packages or feature values", () => {
+  assert.equal(
+    evaluateWithCatalog(
+      'true || hitKeywordBag(missing,"42")',
+      {},
+      () => undefined,
+    ),
+    true,
+  );
+  assert.equal(
+    evaluateWithCatalog("false && missing > 0", {}, () => undefined),
+    false,
+  );
+});

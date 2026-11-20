@@ -114,7 +114,7 @@ export function FeatureLogic({
   archive: any;
   lineage: any;
 }) {
-  const f = archive?.detail || {},
+  const f = archive?.detail || row.featureDefinition || {},
     type =
       typeof f.type === "number"
         ? f.type
@@ -150,7 +150,51 @@ export function FeatureLogic({
     );
   });
   let body: ReactNode;
-  if (archive?.available === false)
+  if (row.featureForm && row.featureForm.kind === "原始特征") body = null;
+  else if (
+    row.featureForm &&
+    row.featureForm.logicMode === "高级配置" &&
+    row.featureForm.kind === "衍生特征"
+  )
+    body = (
+      <>
+        <Fields
+          items={{
+            特征逻辑: "高级配置",
+            计算函数: "拆分循环调用",
+            目标特征依赖入参: f.targetParam,
+            映射输入特征: f.inputFeature,
+          }}
+        />
+        <Link target="_blank" to={"/featureDetails?id=" + f.targetId}>
+          查看特征详情
+        </Link>
+      </>
+    );
+  else if (row.featureForm && row.featureForm.kind === "KV特征")
+    body = (
+      <>
+        <Fields
+          items={{
+            关联类型: f.relationType,
+            KV库: f.library,
+            值类型: f.valueType,
+          }}
+        />
+        <Code label="Key 表达式" value={f.keyExpression} />
+      </>
+    );
+  else if (row.featureForm && row.featureForm.kind === "离线特征")
+    body = (
+      <Fields
+        items={{
+          数据表: f.table,
+          维度列映射: f.dimensions,
+          特征列: row.enName,
+        }}
+      />
+    );
+  else if (archive?.available === false)
     body = <Empty description="来源未提供计算定义" />;
   else if (row.sourceKind === "param" && type === 8)
     body = (
@@ -214,12 +258,19 @@ export function FeatureLogic({
         <Fields
           items={{
             读累计条件设置: a.readMode,
+            ...(a.topTimes ? { 最近次数: a.topTimes } : {}),
             是否累计自身:
-              (a.includeCurrent ?? cfg.includeCurrent) == null
+              a.includeMode ||
+              (a.includeCurrent && a.includeByCondition
+                ? Number(a.includeByCondition) === 1
+                  ? "按照「读累计条件」累计"
+                  : "按照「满足何种条件」累计"
+                : undefined) ||
+              ((a.includeCurrent ?? cfg.includeCurrent) == null
                 ? null
                 : (a.includeCurrent ?? cfg.includeCurrent)
                   ? "累计自身"
-                  : "不累计自身",
+                  : "不累计自身"),
           }}
         />
         {a.readCondition && <Code label="读取条件" value={a.readCondition} />}

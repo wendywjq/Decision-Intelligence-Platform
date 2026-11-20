@@ -1,3 +1,4 @@
+import {SourceSync} from "./SourceSync";
 import { FeatureLogic } from "./FeatureLogic";
 import { useMemo, useState } from "react";
 import {
@@ -238,7 +239,7 @@ function JsonBlock({ value }: { value: any }) {
   );
 }
 export function FeatureDetailContent({ row }: { row: Row }) {
-  const { data, error } = useRemote<any>(row.sourceImported ? "/source/archive/feature/" + row.id : "");
+  const { data, error,reload } = useRemote<any>(row.sourceImported ? "/source/archive/feature/" + row.id : "");
   const lineage = useRemote<any>("/source/features/" + row.id + "/lineage");
   const nav = useNavigate();
   const [edit, setEdit] = useState(false);
@@ -294,7 +295,7 @@ export function FeatureDetailContent({ row }: { row: Row }) {
           状态：{row.status}
         </Tag>
         <Button onClick={() => nav("/featureService")}>返回列表</Button>
-        <Button type="primary" onClick={() => setEdit(true)}>
+        <Button type="primary" onClick={() => row.featureForm ? nav("/featureInfo?type=edit&id="+row.id) : setEdit(true)}>
           编辑
         </Button>
       </PageHeader>
@@ -320,6 +321,7 @@ export function FeatureDetailContent({ row }: { row: Row }) {
                   <Section title="属性信息">{fields(props)}</Section>
                   <Section title="逻辑信息" extra={<Button size="small" onClick={()=>setTab("versions")}>版本信息</Button>}>
                     <FeatureLogic row={row} archive={data} lineage={l} />
+                    {row.sourceImported && data?.detail?.type===2 && !f.accumulation && <SourceSync kind="feature" id={row.id} refresh={reload} auto={data.canSyncSource}/>}
                   </Section>
                   {l?.fetcher && (
                     <Section title="数据接口">

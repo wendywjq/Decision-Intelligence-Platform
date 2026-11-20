@@ -11,7 +11,8 @@
     "verify:source": "tsx scripts/verify-source.ts",
     "verify:details": "tsx scripts/verify-details.ts",
     "verify:catalog": "tsx scripts/verify-full-catalog.ts",
-    "test:capture": "python3 -m unittest discover -s tests -p 'test_capture_rate.py'"
+    "test:capture": "python3 -m unittest discover -s tests -p 'test_capture_rate.py'",
+    "setup:aviator": "python3 scripts/setup-aviator.py"
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",

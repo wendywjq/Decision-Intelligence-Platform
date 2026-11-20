@@ -110,5 +110,5 @@ export function importFullCatalogSnapshot(
         }),
       );
     }
-  })();
+  }).immediate();
 }

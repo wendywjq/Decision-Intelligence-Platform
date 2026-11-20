@@ -1,3 +1,4 @@
+import { resourceLookup } from "./rule-resources.ts";
 import { listCatalogEntities } from "./catalog-list.ts";
 import { riskIdsForRule } from "./risk-filter.ts";
 import type Database from "better-sqlite3";
@@ -616,6 +617,8 @@ export function strategyChanges(
               executableRule(db, rule).expression,
               input,
               (id) => executableRule(db, ruleView(r, id)),
+              [],
+              resourceLookup(db),
             ),
             expected = req.body.expected !== false;
           const result = {
