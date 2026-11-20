@@ -450,3 +450,69 @@ test("mixed rule-definition and group-policy publication rolls back correctly wi
       "riskScore > 0.9",
     );
   }));
+
+test("publishing a single scene binding preserves other groups using the same rule and supports legacy scene-rule IDs", () =>
+  run(async ({ req, db, task, config, action }: any) => {
+    const r = db.prepare("SELECT * FROM source_configs WHERE id='a'").get();
+    db.prepare("INSERT INTO source_configs VALUES(?,?,?,?,?,?,?)").run(
+      "other",
+      r.scene_module,
+      r.scene_id,
+      r.rule_id,
+      999,
+      "",
+      JSON.stringify({ ...JSON.parse(r.data), id: "other", groupId: 999 }),
+    );
+    const legacy = db
+      .prepare(
+        "INSERT INTO scene_rules(scene_module,scene_id,rule_id,status) VALUES('scene',99001,99006,'标记')",
+      )
+      .run().lastInsertRowid;
+    const id = await task();
+    assert.equal(
+      (
+        await req("/source/config/a?changeTaskId=" + id, "PUT", {
+          status: "离线",
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await req("/scene-rules/" + legacy + "?changeTaskId=" + id, "PUT", {
+          status: "离线",
+        })
+      ).status,
+      200,
+    );
+    assert.ok(
+      Array.isArray(
+        (await req("/entities/rulePage/99006/versions?changeTaskId=" + id)).data
+          .items,
+      ),
+    );
+    await req("/releases/" + id + "/gray-config/submit", "POST", {
+      ...config(0),
+      grayEnabled: false,
+    });
+    await action(id, "审批通过");
+    assert.equal((await action(id, "启动灰度")).data.status, "已完成");
+    const list = async () =>
+      Object.fromEntries(
+        (await req("/scenes/scene/99001/rules")).data.items.map((v: any) => [
+          v.id,
+          v.status,
+        ]),
+      );
+    assert.deepEqual(await list(), {
+      a: "离线",
+      other: "生效",
+      [legacy]: "离线",
+    });
+    assert.equal((await action(id, "回滚")).status, 200);
+    assert.deepEqual(await list(), {
+      a: "生效",
+      other: "生效",
+      [legacy]: "标记",
+    });
+  }));

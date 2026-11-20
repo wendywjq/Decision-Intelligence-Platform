@@ -269,7 +269,85 @@ export function registerDetailRoutes(app: Express, db: Database.Database) {
           0,
       ]),
     );
-    res.json({ references: { [type]: r.references?.[type] }, counts });
+    const kind = (
+      {
+        scene: "scene",
+        layerScene: "graph",
+        graphTemplate: "template",
+        rulesGroup: "group",
+      } as Record<string, string>
+    )[type];
+    const managed = kind
+      ? db
+          .prepare("SELECT DISTINCT id FROM source_archives WHERE kind=?")
+          .all(kind)
+          .map((v: any) => v.id)
+      : [];
+    res.json({ references: { [type]: r.references?.[type] }, counts, managed });
+  });
+  // The captured rules include resource IDs and aliases, but not production bag contents.
+  let packageOptions: Map<string, string>[] | undefined;
+  app.get("/api/source/rule-packages", (req, res) => {
+    if (!packageOptions) {
+      packageOptions = [new Map(), new Map()];
+      const rows = db
+        .prepare(
+          "SELECT json_extract(data,'$.logic.ruleConditions') AS conditions FROM source_archives WHERE kind='rule' AND version=''",
+        )
+        .iterate();
+      for (const row of rows as Iterable<any>) {
+        let conditions;
+        try {
+          conditions = JSON.parse(row.conditions);
+        } catch {
+          continue;
+        }
+        if (!Array.isArray(conditions)) continue;
+        for (const c of conditions) {
+          const name = String(c.operatorName || "");
+          if (
+            !name.endsWith("hitKeywordBag") &&
+            !name.endsWith("hitPictureBag")
+          )
+            continue;
+          let right;
+          try {
+            right =
+              typeof c.rightParamValue === "string"
+                ? JSON.parse(c.rightParamValue)
+                : c.rightParamValue;
+          } catch {
+            continue;
+          }
+          if (!Array.isArray(right)) continue;
+          const catalog =
+            packageOptions[name.endsWith("hitPictureBag") ? 1 : 0];
+          for (const item of right) {
+            const id = String(item?.value);
+            if (
+              /^\d+$/.test(id) &&
+              (!catalog.has(id) || (item.alias && item.alias !== id))
+            )
+              catalog.set(id, item.alias || id);
+          }
+        }
+      }
+    }
+    const term = String(req.query.q || "")
+      .trim()
+      .toLowerCase();
+    const items = [];
+    for (const [id, name] of packageOptions[
+      req.query.type === "picture" ? 1 : 0
+    ]) {
+      if ((id + " " + name).toLowerCase().includes(term))
+        items.push({
+          value: id,
+          label: name.includes(id) ? name : id + " " + name,
+        });
+      if (items.length === 50) break;
+    }
+    res.json({ items });
   });
   app.get("/api/source/fetchers", (req, res) =>
     res.json({
@@ -290,7 +368,14 @@ export function registerDetailRoutes(app: Express, db: Database.Database) {
   const index = () => {
     if (featureIndex) return featureIndex;
     const rows = entities("featureService");
-    const byName = new Map(rows.map((r) => [r.enName, r]));
+    const byName = new Map<string, any>();
+    for (const row of rows) {
+      if (
+        !byName.has(row.enName) ||
+        !["来源未收录", "来源不存在"].includes(row.status)
+      )
+        byName.set(row.enName, row);
+    }
     const deps = new Map<number, any[]>();
     const rpcConfigs = new Map(
       (

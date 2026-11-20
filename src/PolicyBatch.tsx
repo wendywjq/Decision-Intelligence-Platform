@@ -88,6 +88,19 @@ export function PolicyBatch({
             render: (_, r) =>
               r.ruleId + " " + (r.ruleName || r.rule?.name || ""),
           },
+          { title: "配置ID", render: (_, r) => r.sourceConfId || r.id },
+          {
+            title: "规则组 / 节点",
+            render: (_, r) =>
+              [
+                r.groupId
+                  ? [r.groupId, r.ruleGroupName].filter(Boolean).join(" ")
+                  : "直挂规则",
+                r.scope?.nodeId,
+              ]
+                .filter(Boolean)
+                .join(" / "),
+          },
           { title: "决策", dataIndex: "decision" },
           { title: "状态", dataIndex: "status" },
           { title: "优先级", dataIndex: "priority" },

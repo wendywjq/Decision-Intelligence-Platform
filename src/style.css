@@ -861,3 +861,9 @@ body:has(.change-environment-bar) .topbar>.brand>span,body:has(.change-environme
 
 .release-workflow-page .workflow-title{display:flex;align-items:center;gap:8px}.release-workflow-page .detail-section{margin:24px 0}.workflow-local-note{margin:14px 0 0;font-size:12px}.workflow-gray-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(240px,1fr);gap:28px;margin:24px 0}.workflow-gray-layout .ant-form-item{margin-bottom:22px}.workflow-gray-layout .ant-input-number-group-wrapper{max-width:150px}.workflow-gray-help{color:#667384;font-size:13px;line-height:1.9;background:#f8f9fb;padding:20px;align-self:start}.release-workflow-page .experiment-impact-card{min-height:300px}.release-workflow-page .experiment-impact-card h3{font-size:17px}.release-workflow-page .experiment-impact-card h3 small{float:right;font-size:12px;font-weight:400}.release-workflow-page .ant-steps{margin:20px 0}.release-workflow-page .ant-tabs-content-holder{padding-top:8px}@media(max-width:1100px){.workflow-gray-layout{grid-template-columns:minmax(0,1fr)}.workflow-gray-help{order:2}}
 .workflow-traffic-info table{table-layout:fixed;width:100%}.workflow-traffic-info .ant-descriptions-item-label{white-space:nowrap;min-width:110px}.workflow-traffic-info .ant-descriptions-item-content{overflow-wrap:anywhere}.workflow-traffic-info .experiment-source-tags{max-width:100%;overflow:hidden auto}.workflow-traffic-info .ant-tag{white-space:normal;word-break:break-word}
+
+.feature-logic h4 { margin: 16px 0 8px; }
+.feature-logic .ant-descriptions-item-label { min-width: 132px; }
+.feature-dependencies { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.feature-logic .code-editor { white-space: pre-wrap; overflow-wrap: anywhere; }
+.feature-logic .code-editor .ant-typography { color: inherit; font-family: inherit; }

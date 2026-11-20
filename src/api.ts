@@ -58,6 +58,23 @@ export async function api<T = any>(
       !path.startsWith("/rule-drafts/test")
     )
       window.dispatchEvent(new Event(CHANGE_EVENT));
+    if (
+      typeof window !== "undefined" &&
+      method === "POST" &&
+      /^\/releases\/\d+\/(?:workflow\/action|advance)$/.test(path) &&
+      ["已完成", "已回滚"].includes(data?.status)
+    ) {
+      // A scene may be open in the publishing tab or in another tab.
+      window.dispatchEvent(new Event(CHANGE_EVENT));
+      try {
+        localStorage.setItem(
+          "zeus-policy-publication",
+          Date.now() + ":" + Math.random(),
+        );
+      } catch {
+        // Storage may be disabled. The committed action and same-tab refresh still succeed.
+      }
+    }
     return data;
   }
 }

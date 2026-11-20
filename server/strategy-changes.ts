@@ -4,7 +4,7 @@ import type Database from "better-sqlite3";
 import type { RequestHandler } from "express";
 import { randomUUID } from "node:crypto";
 import { GroupRuleError, groupRules } from "./group-rules.ts";
-import { evaluateRuleExpression } from "../src/rule-logic.ts";
+import { executableRule, evaluateWithCatalog } from "./evaluate-rule.ts";
 type Change = any;
 export function strategyChanges(
   db: Database.Database,
@@ -32,7 +32,7 @@ export function strategyChanges(
         .prepare("SELECT * FROM scene_rules WHERE id=?")
         .get(Number(id.slice(7))) as any;
       return r
-        ? { id, ...r, data: { ...r, id, ruleId: r.rule_id } }
+        ? { ...r, id, data: { ...r, id, ruleId: r.rule_id } }
         : undefined;
     }
     const r = db
@@ -361,7 +361,7 @@ export function strategyChanges(
               ),
             ],
           });
-        if (p[0] === "entities" && p[1] === "rulePage" && p[2]) {
+        if (p[0] === "entities" && p[1] === "rulePage" && p[2] && !p[3]) {
           const e = ruleView(r, Number(p[2]));
           return e
             ? res.json(e)
@@ -612,7 +612,11 @@ export function strategyChanges(
             typeof req.body.input === "string"
               ? JSON.parse(req.body.input)
               : req.body.input;
-          const actual = evaluateRuleExpression(rule.expression, input),
+          const actual = evaluateWithCatalog(
+              executableRule(db, rule).expression,
+              input,
+              (id) => executableRule(db, ruleView(r, id)),
+            ),
             expected = req.body.expected !== false;
           const result = {
             rule_id: rule.id,
@@ -752,7 +756,10 @@ export function strategyChanges(
               alias: c.after.name ?? raw.logic?.alias,
               name: c.after.enName ?? raw.logic?.name,
             };
-            if (c.after.expression !== undefined) {
+            if (
+              c.after.expression !== undefined &&
+              c.after.expression !== c.before?.expression
+            ) {
               raw.logic.ruleConditions = [];
               raw.logic.editMode = 2;
             }
@@ -829,7 +836,11 @@ export function strategyChanges(
   const rollback = (s: any) => {
     if (s.kind === "group") return groups.rollback(s.snapshot);
     if (s.kind === "config") {
-      unchanged(s.after, config(s.id) || null);
+      const expected =
+        s.after && s.id.startsWith("legacy:")
+          ? { ...s.after, id: s.id }
+          : s.after;
+      unchanged(expected, config(s.id) || null);
       if (s.id.startsWith("legacy:")) {
         db.prepare("DELETE FROM scene_rules WHERE id=?").run(
           Number(s.id.slice(7)),

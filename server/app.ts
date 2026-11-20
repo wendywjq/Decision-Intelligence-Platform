@@ -1,3 +1,4 @@
+import { executableRule, evaluateWithCatalog } from "./evaluate-rule.ts";
 import { registerReleaseWorkflow } from "./release-workflow.ts";
 import { registerExperimentConfig } from "./experiment-config.ts";
 import { randomUUID } from "node:crypto";
@@ -25,6 +26,13 @@ export function createApp(db: Database.Database) {
       .get(module, id) as { data: string } | undefined;
     return r ? JSON.parse(r.data) : undefined;
   };
+  const evaluateExpression = (
+    expression: string,
+    input: Record<string, unknown>,
+  ) =>
+    evaluateWithCatalog(expression, input, (id) =>
+      executableRule(db, get("rulePage", id)),
+    );
   const audit = (m: string, id: number, name: string, action: string) =>
     db
       .prepare(
@@ -51,8 +59,24 @@ export function createApp(db: Database.Database) {
         id,
         JSON.stringify(next),
       );
-      if (m === "rulePage") {
+      if (
+        m === "rulePage" &&
+        (!old ||
+          next.expression !== old.expression ||
+          JSON.stringify(next.ruleConditions) !==
+            JSON.stringify(old.ruleConditions))
+      ) {
         const names = [...expressionFeatureNames(next.expression)];
+        const selected = new Map<string, Set<number>>();
+        for (const c of next.ruleConditions || []) {
+          const f =
+            Number.isInteger(c.featureId) && get("featureService", c.featureId);
+          if (f && f.enName === c.feature) {
+            const ids = selected.get(c.feature) || new Set<number>();
+            ids.add(f.id);
+            selected.set(c.feature, ids);
+          }
+        }
         db.prepare("DELETE FROM source_feature_refs WHERE rule_id=?").run(id);
         if (names.length)
           for (const f of db
@@ -63,6 +87,8 @@ export function createApp(db: Database.Database) {
             )
             .all(...names) as any[]) {
             const d = JSON.parse(f.data);
+            if (selected.has(d.enName) && !selected.get(d.enName)!.has(f.id))
+              continue;
             db.prepare(
               "INSERT OR IGNORE INTO source_feature_refs VALUES(?,?,?,?,?)",
             ).run(
@@ -87,7 +113,10 @@ export function createApp(db: Database.Database) {
             alias: next.name,
             name: next.enName || raw.logic?.name,
           };
-          if (data.expression !== undefined) {
+          if (
+            data.expression !== undefined &&
+            data.expression !== old?.expression
+          ) {
             raw.logic.expression = next.expression;
             raw.logic.originExpression = next.expression;
             raw.logic.ruleConditions = [];
@@ -346,7 +375,7 @@ export function createApp(db: Database.Database) {
       requestId: r.requestId,
       expression: rule.expression,
       input: r.input,
-      hit: evaluateExpression(rule.expression, r.input),
+      hit: evaluateExpression(executableRule(db, rule).expression, r.input),
     });
   });
   app.get("/api/cumulative", (req, res) => {
@@ -518,7 +547,26 @@ export function createApp(db: Database.Database) {
       )
       .get(req.params.kind, Number(req.params.id)) as any;
     if (!row) return res.status(404).json({ error: "尚未导入该来源对象" });
-    res.json(JSON.parse(row.data));
+    const archive = JSON.parse(row.data);
+    if (req.params.kind === "rule" && !archive.detail?.versionInfo?.length) {
+      const captured = db
+        .prepare(
+          "SELECT json_extract(data,'$.detail.versionInfo') AS versions FROM source_detail_objects WHERE kind='ruleDetail' AND id=?",
+        )
+        .get(req.params.id) as any;
+      const supplement = db
+        .prepare(
+          "SELECT data FROM source_detail_objects WHERE kind='ruleVersions' AND id=?",
+        )
+        .get(req.params.id) as any;
+      const versions = supplement?.data || captured?.versions;
+      if (versions)
+        archive.detail = {
+          ...archive.detail,
+          versionInfo: JSON.parse(versions),
+        };
+    }
+    res.json(archive);
   });
   app.get("/api/source/configs/:module/:id", (req, res) => {
     const rows = db
@@ -555,12 +603,22 @@ export function createApp(db: Database.Database) {
   });
   app.get("/api/source/rules/:id/features", (req, res) => {
     const refs = db
-      .prepare("SELECT * FROM source_feature_refs WHERE rule_id=?")
+      .prepare(
+        `
+      SELECT e.data, json_extract(a.data,'$.detail.creator') AS creator,
+             json_extract(a.data,'$.detail.modifier') AS modifier,
+             coalesce(json_extract(a.data,'$.detail.ref_count'),json_extract(a.data,'$.detail.refCount')) AS refCount
+      FROM source_feature_refs r JOIN entities e ON e.module='featureService' AND e.id=r.feature_id
+      LEFT JOIN source_archives a ON a.kind='feature' AND a.id=e.id AND a.version=''
+      WHERE r.rule_id=? ORDER BY r.feature_id
+    `,
+      )
       .all(Number(req.params.id)) as any[];
     res.json({
-      items: refs
-        .map((x) => get("featureService", x.feature_id))
-        .filter(Boolean),
+      items: refs.map(({ data, ...meta }) => ({
+        ...JSON.parse(data),
+        ...meta,
+      })),
     });
   });
   app.get("/api/source/rules/:id/references", (req, res) => {
@@ -980,7 +1038,10 @@ export function createApp(db: Database.Database) {
           ? JSON.parse(req.body.input)
           : req.body.input;
       if (!input || typeof input !== "object") throw Error("请输入JSON对象");
-      const result = evaluateExpression(rule.expression, input);
+      const result = evaluateExpression(
+        executableRule(db, rule).expression,
+        input,
+      );
       const expected =
         req.body.expected === undefined ? true : Boolean(req.body.expected);
       const info = db

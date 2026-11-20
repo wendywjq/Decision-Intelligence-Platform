@@ -68,8 +68,13 @@ export function ModulePage({ module: m }: { module: Module }) {
   const [searchMode, setSearchMode] = useState("模糊搜索");
   const [batchMode, setBatchMode] = useState(false);
   const [chart, setChart] = useState<Row>();
+  const [expandedScenes, setExpandedScenes] = useState<readonly React.Key[]>([]);
   useEffect(() => {
-    if (params.get("id")) setFilters({ id: params.get("id")! });
+    if (params.get("id")) {
+      setFilters({ id: params.get("id")! });
+      setPage(1);
+      setExpandedScenes([Number(params.get("id"))]);
+    }
   }, [params]);
   const query = new URLSearchParams({
     page: String(page),
@@ -638,11 +643,13 @@ export function ModulePage({ module: m }: { module: Module }) {
           expandable={
             m.kind === "scene"
               ? {
+                  expandedRowKeys: expandedScenes,
+                  onExpandedRowsChange: setExpandedScenes,
                   expandedRowRender: (r) =>
                     m.key === "rulesGroup" ? (
                       <GroupRules id={r.id} />
                     ) : r.sourceImported ? (
-                      <ImportedSceneRules module={m.key} id={r.id} />
+                      <ImportedSceneRules module={m.key} id={r.id} flatGroups={flat} />
                     ) : (
                       <SceneRules module={m.key} id={r.id} />
                     ),

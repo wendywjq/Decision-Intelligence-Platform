@@ -1,4 +1,7 @@
-import { expressionFeatureNames } from "./feature-refs.ts";
+import {
+  expressionFeatureNames,
+  typedFeatureReferences,
+} from "./feature-refs.ts";
 import type Database from "better-sqlite3";
 import { existsSync, readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
@@ -210,9 +213,9 @@ export function importSourceSnapshot(
       allowNewSource("featureService", id, d.addtime);
       if (protectedRows.has("featureService:" + id)) protectedFeatures.push(id);
       const name = d.name || f.reference?.value || "";
-      featureNames.set(name, { ...f, entityId: id });
-      for (const alias of f.referenceNames || [])
-        featureNames.set(alias, { ...f, entityId: id });
+      for (const alias of [name, ...(f.referenceNames || [])])
+        if (f.available !== false || !featureNames.has(alias))
+          featureNames.set(alias, { ...f, entityId: id });
       featureIds.set(f.kind + ":" + f.id, id);
       featureEntityNames.set(id, name);
       put("featureService", id, {
@@ -341,7 +344,24 @@ export function importSourceSnapshot(
             featureEntityNames.get(id),
           );
       }
+      const typed = typedFeatureReferences(logic);
+      for (const [name, ids] of typed)
+        for (const id of ids)
+          if (featureEntityNames.get(id) === name)
+            featureRef.run(
+              r.id,
+              id,
+              id % 1000000000,
+              id >= 1000000000 ? "param" : "factor",
+              name,
+            );
       for (const name of refs) {
+        if (
+          [...(typed.get(name) || [])].some(
+            (id) => featureEntityNames.get(id) === name,
+          )
+        )
+          continue;
         const f = featureNames.get(name);
         if (f) featureRef.run(r.id, f.entityId, f.id, f.kind, name);
       }
@@ -603,4 +623,95 @@ export function syncSourceFixture(db: Database.Database) {
     .get("source-import-digest") as any;
   if (row && JSON.parse(row.value) === digest) return;
   importSourceSnapshot(db, JSON.parse(gunzipSync(bytes).toString()), digest);
+}
+
+/** Repair existing checkouts without reimporting scenes or overwriting local rule edits. */
+export function reconcileTypedReferences(db: Database.Database) {
+  const marker = "typed-rule-feature-refs:v1";
+  const version = (
+    db
+      .prepare("SELECT value FROM settings WHERE key='full-catalog-digest'")
+      .get() as any
+  )?.value;
+  if (
+    !version ||
+    (db.prepare("SELECT value FROM settings WHERE key=?").get(marker) as any)
+      ?.value === version
+  )
+    return;
+  const names = new Map<number, string>(
+    (
+      db
+        .prepare(
+          "SELECT id,json_extract(data,'$.enName') AS name FROM entities WHERE module='featureService'",
+        )
+        .all() as any[]
+    ).map((r) => [r.id, r.name]),
+  );
+  const edited = new Set(
+    (
+      db
+        .prepare(
+          "SELECT DISTINCT entity_id FROM audit WHERE module='rulePage' AND action IN ('修改','删除','回滚')",
+        )
+        .all() as any[]
+    ).map((r) => r.entity_id),
+  );
+  const rows = db.prepare(
+    "SELECT id,json_extract(data,'$.logic.ruleConditions') AS ruleConditions,json_extract(data,'$.logic.factorIdList') AS factorIds FROM source_archives WHERE kind='rule' AND version=''",
+  );
+  const existing = db.prepare(
+    "SELECT feature_id FROM source_feature_refs WHERE rule_id=? AND name=?",
+  );
+  const remove = db.prepare(
+    "DELETE FROM source_feature_refs WHERE rule_id=? AND feature_id=?",
+  );
+  const put = db.prepare(
+    "INSERT OR IGNORE INTO source_feature_refs VALUES(?,?,?,?,?)",
+  );
+  const count = db.prepare(
+    "UPDATE entities SET data=json_set(data,'$.featureCount',(SELECT COUNT(*) FROM source_feature_refs WHERE rule_id=?)) WHERE module='rulePage' AND id=?",
+  );
+  db.transaction(() => {
+    // Do not write while stepping a live SQLite cursor on the same connection.
+    const rules = rows.all() as any[];
+    for (const r of rules) {
+      if (edited.has(r.id)) continue;
+      const direct = new Set(
+        String(r.factorIds || "")
+          .replace(/[\[\]]/g, "")
+          .split(",")
+          .map(Number),
+      );
+      let changed = false;
+      for (const [name, ids] of typedFeatureReferences(r)) {
+        const valid = [...ids].filter((id) => names.get(id) === name);
+        if (!valid.length) continue;
+        const before = (existing.all(r.id, name) as any[]).map(
+          (v) => v.feature_id,
+        );
+        for (const old of before)
+          if (!ids.has(old) && !direct.has(old)) {
+            remove.run(r.id, old);
+            changed = true;
+          }
+        for (const id of valid)
+          if (!before.includes(id)) {
+            put.run(
+              r.id,
+              id,
+              id % 1000000000,
+              id >= 1000000000 ? "param" : "factor",
+              name,
+            );
+            changed = true;
+          }
+      }
+      if (changed) count.run(r.id, r.id);
+    }
+    db.prepare("INSERT OR REPLACE INTO settings VALUES(?,?)").run(
+      marker,
+      version,
+    );
+  })();
 }

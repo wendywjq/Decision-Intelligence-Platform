@@ -1,3 +1,4 @@
+import { matchOperator, type LookupOperator } from "./rule-operators.ts";
 /** Parse numbered condition logic. No eval or JavaScript execution. */
 export function compileConditionLogic(
   logic: string,
@@ -45,12 +46,18 @@ export function compileConditionLogic(
 export function evaluateRuleExpression(
   expression: string,
   input: Record<string, unknown>,
+  lookup?: LookupOperator,
 ): boolean {
   if (typeof expression !== "string" || !expression.trim())
     throw Error("表达式不能为空");
-  const text = expression.replace(/\/\*[\s\S]*?\*\//g, "");
+  const text = expression
+    .trim()
+    .replace(/^##[^\n]*\n/gm, "")
+    .replace(/^\s*return\s+/, "")
+    .replace(/;\s*$/, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
   const pattern =
-    /\s*(>=|<=|==|!=|&&|\|\||[!()<>]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|-?\d+(?:\.\d+)?|[A-Za-z_$][\w$]*)/gy;
+    /\s*(>=|<=|==|!=|&&|\|\||[!,()<>]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|-?\d+(?:\.\d+)?|[A-Za-z_$][\w$]*)/gy;
   const tokens: string[] = [];
   let pos = 0;
   while (pos < text.length) {
@@ -73,12 +80,24 @@ export function evaluateRuleExpression(
     if (t === "!") return !Boolean(value());
     if (t === "true") return true;
     if (t === "false") return false;
-    if (t === "null") return null;
+    if (t === "null" || t === "nil") return null;
     if (/^"/.test(t)) return JSON.parse(t);
     if (/^'/.test(t)) return t.slice(1, -1).replace(/\\'/g, "'");
     if (/^-?\d/.test(t)) return Number(t);
     if (!/^[A-Za-z_$][\w$]*$/.test(t)) throw Error("缺少表达式操作数");
-    if (!(t in input)) throw Error("缺少输入参数：" + t);
+    if (tokens[i] === "(") {
+      i++;
+      const left = value(),
+        args: unknown[] = [];
+      while (tokens[i] === ",") {
+        i++;
+        args.push(value());
+      }
+      if (tokens[i++] !== ")") throw Error("操作符参数格式错误");
+      return matchOperator(t, left, args, lookup);
+    }
+    if (!Object.prototype.hasOwnProperty.call(input, t))
+      throw Error("缺少输入参数：" + t);
     return input[t];
   };
   const comparison = (): boolean => {

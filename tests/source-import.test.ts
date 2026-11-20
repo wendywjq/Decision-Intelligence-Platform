@@ -1,7 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { openDatabase } from "../server/db.ts";
-import { importSourceSnapshot } from "../server/source-import.ts";
+import {
+  importSourceSnapshot,
+  reconcileTypedReferences,
+} from "../server/source-import.ts";
 test("source importer preserves repeated rules in separate groups and resolves JSON-string conditions", () => {
   const db = openDatabase(":memory:");
   const snapshot = {
@@ -484,4 +487,55 @@ test("full feature import rejects missing or duplicate catalog entries before wr
     );
   }
   db.close();
+});
+
+test("typed condition references disambiguate equal names and numeric IDs on import and on existing databases", () => {
+  const db = openDatabase(":memory:");
+  try {
+    const feature = (kind: string) => ({
+      kind,
+      id: 51,
+      detail: { name: "sharedName", alias: kind, type: 0 },
+    });
+    const rule = (id: number, type: number) => ({
+      id,
+      logic: {
+        name: "r" + id,
+        expression: "1",
+        ruleConditions: [
+          {
+            leftParamValue: JSON.stringify([
+              { value: "sharedName", id: 51, zeusDataType: type },
+            ]),
+          },
+        ],
+      },
+    });
+    importSourceSnapshot(db, {
+      rules: [rule(41, 1), rule(42, 0)],
+      features: [feature("factor"), feature("param")],
+    });
+    const refs = () =>
+      db
+        .prepare(
+          "SELECT rule_id,feature_id FROM source_feature_refs ORDER BY rule_id",
+        )
+        .all();
+    const correct = [
+      { rule_id: 41, feature_id: 51 },
+      { rule_id: 42, feature_id: 1000000051 },
+    ];
+    assert.deepEqual(refs(), correct);
+    db.prepare(
+      "UPDATE source_feature_refs SET feature_id=1000000051,kind='param' WHERE rule_id=41",
+    ).run();
+    db.prepare(
+      "INSERT INTO settings VALUES('full-catalog-digest','test')",
+    ).run();
+    reconcileTypedReferences(db);
+    reconcileTypedReferences(db);
+    assert.deepEqual(refs(), correct);
+  } finally {
+    db.close();
+  }
 });

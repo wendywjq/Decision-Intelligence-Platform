@@ -1,3 +1,4 @@
+import { FeatureLogic } from "./FeatureLogic";
 import { useMemo, useState } from "react";
 import {
   Alert,
@@ -73,8 +74,8 @@ export function RuleUsage({ id, items }: { id: number; items: any[] }) {
         scene_id:
           value.sceneId ||
           value.graphSceneId ||
-          value.ruleGroupId ||
-          context.scene_id,
+          context.scene_id ||
+          value.ruleGroupId,
         name:
           value.sceneName ||
           value.graphSceneName ||
@@ -104,9 +105,9 @@ export function RuleUsage({ id, items }: { id: number; items: any[] }) {
     walk(source);
     return result;
   };
-  const all: any[] = remote
-    ? flatten(remote)
-    : items.filter((r) => r.scene_module === type);
+  const localRows = items.filter(r=>r.scene_module === type);
+  const managed = new Set([...(detail.data?.managed || []),...localRows.map(r=>Number(r.scene_id))]);
+  const all = [...localRows,...(remote ? flatten(remote).filter((r:any)=>!managed.has(Number(r.scene_id))) : [])];
   const filtered = all.filter(
     (r) =>
       (!q ||
@@ -168,7 +169,7 @@ export function RuleUsage({ id, items }: { id: number; items: any[] }) {
               <Link
                 target="_blank"
                 rel="noopener noreferrer"
-                to={route(type, r.scene_id)}
+                to={route(type, r.scene_id) + (type === "scene" && r.conf?.sourceConfId ? "&configId="+encodeURIComponent(r.id) : "")}
               >
                 {r.scene_id} - {r.name || r.conf.sceneName || "查看对象"}
               </Link>
@@ -237,19 +238,13 @@ function JsonBlock({ value }: { value: any }) {
   );
 }
 export function FeatureDetailContent({ row }: { row: Row }) {
-  const { data, error } = useRemote<any>("/source/archive/feature/" + row.id);
+  const { data, error } = useRemote<any>(row.sourceImported ? "/source/archive/feature/" + row.id : "");
   const lineage = useRemote<any>("/source/features/" + row.id + "/lineage");
   const nav = useNavigate();
   const [edit, setEdit] = useState(false);
   const [tab, setTab] = useState("basic");
-  const f = data?.detail || {},
+  const f = data?.detail || (row.sourceImported ? {} : row),
     l = lineage.data;
-  let expression: any;
-  try {
-    expression = JSON.parse(f.expression || "{}");
-  } catch {
-    expression = {};
-  }
   const props: any = {
     特征ID: row.sourceId || row.id,
     特征类型:
@@ -264,9 +259,12 @@ export function FeatureDetailContent({ row }: { row: Row }) {
               累计因子: "累计特征",
               扩展因子: "KV特征",
               模型因子: "模型特征",
+              离线因子: "离线特征",
+              "类型 12":"大模型工作流特征",
             } as any
           )[row.type || ""] || row.type,
-    风险域: "内容安全",
+    风险域: f.riskDomain || "—",
+    ...(f.featureCategory ? {特征分类:f.featureCategory,特征主体:f.subject,业务线:f.business} : {}),
     中文名称: row.name,
     英文名称: row.enName,
     特征说明: f.description || f.remark || f.reason || "—",
@@ -320,28 +318,8 @@ export function FeatureDetailContent({ row }: { row: Row }) {
               <div className="feature-detail-layout">
                 <div>
                   <Section title="属性信息">{fields(props)}</Section>
-                  <Section title="逻辑信息">
-                    {fields({
-                      结果类型: row.dataType,
-                      依赖特征: f.paramList || f.param_list || "—",
-                    })}
-                    {row.type === "模型因子" || data?.model ? (
-                      <>
-                        {fields({
-                          模型服务:
-                            data?.model?.id || expression.modelId || "—",
-                          参数映射: expression,
-                        })}
-                      </>
-                    ) : (
-                      <JsonBlock
-                        value={
-                          row.expression ||
-                          f.expression ||
-                          "原始特征，无计算表达式"
-                        }
-                      />
-                    )}
+                  <Section title="逻辑信息" extra={<Button size="small" onClick={()=>setTab("versions")}>版本信息</Button>}>
+                    <FeatureLogic row={row} archive={data} lineage={l} />
                   </Section>
                   {l?.fetcher && (
                     <Section title="数据接口">

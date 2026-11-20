@@ -1,3 +1,4 @@
+import { Link } from "./navigation";
 import { App, Button, Descriptions, Popconfirm, Space, Table, Tag } from "antd";
 import { api } from "./api";
 export function ChangeReview({
@@ -23,7 +24,31 @@ export function ChangeReview({
         scroll={{ x: 900 }}
         columns={[
           { title: "对象", dataIndex: "objectType" },
-          { title: "目标", render: (_, c) => c.ruleId || c.configId },
+          {
+            title: "目标",
+            render: (_, c) => (
+              <Space direction="vertical">
+                <Link target="_blank" to={"/ruleDetails?id=" + c.ruleId}>
+                  规则 {c.ruleId}
+                </Link>
+                {c.sceneModule === "scene" && (
+                  <Link
+                    target="_blank"
+                    to={
+                      "/scene?id=" +
+                      c.sceneId +
+                      "&configId=" +
+                      encodeURIComponent(c.configId)
+                    }
+                  >
+                    场景 {c.sceneId} · 配置{" "}
+                    {c.before?.sourceConfId || c.configId}
+                  </Link>
+                )}
+                {c.groupId > 0 && <span>规则组 {c.groupId}</span>}
+              </Space>
+            ),
+          },
           {
             title: "操作",
             render: (_, c) => (

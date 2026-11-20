@@ -1,0 +1,23 @@
+{
+  "id": 5004177,
+  "kind": "factor",
+  "detail": {
+    "id": 5004177, "versionId": 1032014, "type": 2,
+    "name": "factor_sg_digital_lanjie_cishu_group_by_user_poi_sku_7d",
+    "alias": "闪购_数码_同用户同门店同SKU_被拦截次数_7d",
+    "description": "闪购数码品类同用户同门店同SKU近7天被拦截次数累计",
+    "riskDomain": "AI生成", "featureCategory": "AI生成", "subject": "AI生成", "business": "AI生成",
+    "creator": "linlingyu", "modifier": "linlingyu", "owners": "linlingyu",
+    "addtime": "2026-11-19 21:10:54", "modtime": "2026-11-19 21:10:57",
+    "valueManageSwitch": false,
+    "paramList": "factor_common_poi_id,factor_common_user_id,sku_id,factor_common_order_id_view,factor_common_first_category",
+    "accumulation": {
+      "mode": "普通配置", "events": ["1610377 | 【到家】外卖到家提交订单-waimaiSubmitOrder"],
+      "traffic": "1个事件2个接入点", "period": "7 自然日", "type": "计数",
+      "keys": ["factor_common_poi_id", "factor_common_user_id", "sku_id"],
+      "value": "factor_common_order_id_view", "distinct": true, "distinctKey": "factor_common_order_id_view",
+      "writeCondition": "##exp - 5\nreturn factor_common_first_category == 42000000;",
+      "readMode": "与写累计条件相同", "includeCurrent": false
+    }
+  }
+}

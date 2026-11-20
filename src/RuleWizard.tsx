@@ -1,3 +1,8 @@
+import {
+  conditionExpression,
+  operatorsFor,
+  ruleOperator,
+} from "./rule-operators";
 import { RiskTagSelect } from "./RiskTagSelect";
 import { compileConditionLogic } from "./rule-logic";
 import { useEffect, useState } from "react";
@@ -19,12 +24,78 @@ import {
 } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, entityPath } from "./api";
-const operators = [">", ">=", "<", "<=", "==", "!="];
-const literal = (v: any) => {
-  const s = String(v ?? "").trim();
-  if (/^(true|false|-?\d+(\.\d+)?)$/.test(s) || /^".*"$/.test(s)) return s;
-  return JSON.stringify(s);
+const operandHint = (name: string) => {
+  const op = ruleOperator(name);
+  return (
+    {
+      bag: "词包 ID",
+      picture: "图包 ID",
+      rule: "子规则 ID",
+      none: "",
+      value: "常量值",
+    }[op?.operand || "value"] + (op?.multiple ? "，按回车添加" : "")
+  );
 };
+function ResourceSelector({
+  kind,
+  value,
+  onChange,
+}: {
+  kind: string;
+  value?: any;
+  onChange?: (v: any) => void;
+}) {
+  const [query, setQuery] = useState(""),
+    [options, setOptions] = useState<any[]>([]);
+  const { message } = App.useApp();
+  useEffect(() => {
+    let active = true;
+    const t = setTimeout(() => {
+      const path =
+        kind === "rule"
+          ? "/entities/rulePage?pageSize=30&q=" + encodeURIComponent(query)
+          : "/source/rule-packages?type=" +
+            kind +
+            "&q=" +
+            encodeURIComponent(query);
+      api(path)
+        .then((d) => {
+          if (active)
+            setOptions(
+              kind === "rule"
+                ? d.items.map((r: any) => ({
+                    value: String(r.id),
+                    label: r.id + " " + r.name,
+                  }))
+                : d.items,
+            );
+        })
+        .catch((e) => {
+          if (active) message.error(e.message);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [kind, query]);
+  return (
+    <Select
+      mode={kind === "rule" ? undefined : "tags"}
+      showSearch
+      allowClear
+      filterOption={false}
+      onSearch={setQuery}
+      style={{ minWidth: 250 }}
+      placeholder={
+        kind === "rule" ? "搜索子规则 ID / 名称" : "搜索资源 ID / 名称"
+      }
+      value={value}
+      options={options}
+      onChange={onChange}
+    />
+  );
+}
 export function RuleWizard({
   open,
   onClose,
@@ -51,7 +122,7 @@ export function RuleWizard({
     [decisions, setDecisions] = useState<any[]>([]),
     [tags, setTags] = useState<any[]>([]),
     [featureQuery, setFeatureQuery] = useState("");
-  const values = Form.useWatch([], form) || {};
+  const values = Form.useWatch([], { form, preserve: true }) || {};
   const conditions = values.conditions || [];
   let expression = values.expression || "",
     logicError = "";
@@ -59,10 +130,7 @@ export function RuleWizard({
     try {
       expression = compileConditionLogic(
         values.conditionLogic || "1",
-        conditions.map(
-          (c: any) =>
-            `${c.feature || ""} ${c.operator || ">"} ${literal(c.value)}`,
-        ),
+        conditions.map(conditionExpression),
       );
     } catch (e: any) {
       logicError = e.message;
@@ -73,7 +141,7 @@ export function RuleWizard({
     if (!open) return;
     form.resetFields();
     form.setFieldsValue({
-      conditions: [{ operator: ">" }],
+      conditions: [{}],
       conditionLogic: "1",
       owner: "demo",
       status: "就绪",
@@ -92,6 +160,12 @@ export function RuleWizard({
         onOk: () => {
           try {
             const d = JSON.parse(draft);
+            for (const c of d.values.conditions || []) {
+              if (c.feature && !c.featureId) {
+                c.featureId = "legacy:" + c.feature;
+                c.featureLabel = c.feature;
+              }
+            }
             form.setFieldsValue(d.values);
             setMode(d.mode);
             setStep(d.step || 0);
@@ -143,7 +217,7 @@ export function RuleWizard({
         .replace(/"[^"]*"|'[^']*'/g, "")
         .match(/[A-Za-z_]\w*/g) || [],
     ),
-  ].filter((n) => !["true", "false", "null"].includes(n));
+  ].filter((n) => !ruleOperator(n) && !["true", "false", "null"].includes(n));
   const validTests = tests.filter((t) => t.expression === expression);
   function saveDraft() {
     localStorage.setItem(
@@ -178,8 +252,11 @@ export function RuleWizard({
           "enName",
           ...(mode === "交互式"
             ? conditions.flatMap((_: any, i: number) => [
-                ["conditions", i, "feature"],
-                ["conditions", i, "value"],
+                ["conditions", i, "featureId"],
+                ["conditions", i, "operator"],
+                ...(ruleOperator(conditions[i]?.operator)?.operand === "none"
+                  ? []
+                  : [["conditions", i, "value"]]),
               ])
             : ["expression"]),
         ]);
@@ -355,7 +432,7 @@ export function RuleWizard({
                           <span>条件 {i + 1}</span>
                           <Form.Item
                             {...rest}
-                            name={[name, "feature"]}
+                            name={[name, "featureId"]}
                             rules={[
                               { required: true, message: "请选择左变量" },
                             ]}
@@ -366,36 +443,118 @@ export function RuleWizard({
                               showSearch
                               filterOption={false}
                               onSearch={setFeatureQuery}
-                              options={features.map((f) => ({
-                                value: f.enName,
-                                label:
-                                  (f.sourceId || f.id) +
-                                  "-" +
-                                  f.name +
-                                  " (" +
-                                  f.enName +
-                                  ")",
-                              }))}
-                            />
-                          </Form.Item>
-                          <Form.Item {...rest} name={[name, "operator"]}>
-                            <Select
-                              style={{ width: 100 }}
-                              options={operators.map((value) => ({
-                                value,
-                                label: value,
-                              }))}
+                              onSelect={(_, option) => {
+                                const type = option.dataType || "";
+                                const available = operatorsFor(type);
+                                form.setFieldValue(["conditions", name], {
+                                  feature: option.enName,
+                                  featureId: option.value,
+                                  featureLabel: option.label,
+                                  dataType: type,
+                                  operator: available[0]?.value,
+                                });
+                              }}
+                              options={[
+                                ...(conditions[name]?.featureId &&
+                                !features.some(
+                                  (f) => f.id === conditions[name]?.featureId,
+                                )
+                                  ? [
+                                      {
+                                        value: conditions[name].featureId,
+                                        label:
+                                          conditions[name].featureLabel ||
+                                          conditions[name].feature,
+                                        enName: conditions[name].feature,
+                                        dataType: conditions[name].dataType,
+                                      },
+                                    ]
+                                  : []),
+                                ...features.map((f) => ({
+                                  value: f.id,
+                                  enName: f.enName,
+                                  dataType: f.dataType,
+                                  label:
+                                    (f.sourceId || f.id) +
+                                    "-" +
+                                    f.name +
+                                    " (" +
+                                    f.enName +
+                                    ")",
+                                })),
+                              ]}
                             />
                           </Form.Item>
                           <Form.Item
                             {...rest}
-                            name={[name, "value"]}
+                            name={[name, "operator"]}
                             rules={[
-                              { required: true, message: "请输入右变量" },
+                              { required: true, message: "请选择操作符" },
                             ]}
                           >
-                            <Input placeholder="右变量：常量值" />
+                            <Select
+                              style={{ width: 210 }}
+                              placeholder="操作符"
+                              disabled={!conditions[name]?.feature}
+                              options={operatorsFor(
+                                conditions[name]?.dataType,
+                              ).map((op) => ({
+                                value: op.value,
+                                label: op.label,
+                              }))}
+                              onChange={() =>
+                                form.setFieldValue(
+                                  ["conditions", name, "value"],
+                                  undefined,
+                                )
+                              }
+                            />
                           </Form.Item>
+                          {ruleOperator(conditions[name]?.operator)?.operand !==
+                            "none" && (
+                            <Form.Item
+                              {...rest}
+                              name={[name, "value"]}
+                              rules={[
+                                { required: true, message: "请填写右变量" },
+                              ]}
+                            >
+                              {["bag", "picture", "rule"].includes(
+                                ruleOperator(conditions[name]?.operator)
+                                  ?.operand || "",
+                              ) ? (
+                                <ResourceSelector
+                                  kind={
+                                    ruleOperator(conditions[name]?.operator)!
+                                      .operand
+                                  }
+                                />
+                              ) : ruleOperator(conditions[name]?.operator)
+                                  ?.multiple ? (
+                                <Select
+                                  mode="tags"
+                                  open={false}
+                                  tokenSeparators={[",", "，"]}
+                                  style={{ minWidth: 210 }}
+                                  placeholder={operandHint(
+                                    conditions[name]?.operator,
+                                  )}
+                                />
+                              ) : (
+                                <Input
+                                  placeholder={operandHint(
+                                    conditions[name]?.operator,
+                                  )}
+                                />
+                              )}
+                            </Form.Item>
+                          )}
+                          {ruleOperator(conditions[name]?.operator)?.operand ===
+                            "rule" && (
+                            <Form.Item name={[name, "elementParam"]}>
+                              <Input placeholder="元素映射到子规则入参" />
+                            </Form.Item>
+                          )}
                           <Button
                             disabled={fields.length === 1}
                             onClick={() => remove(name)}
@@ -406,7 +565,7 @@ export function RuleWizard({
                       ))}
                       <Button
                         onClick={() => {
-                          add({ operator: ">" });
+                          add({});
                           form.setFieldValue(
                             "conditionLogic",
                             "(" +

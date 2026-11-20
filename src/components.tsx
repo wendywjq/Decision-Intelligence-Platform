@@ -1,11 +1,12 @@
 import { RiskTagSelect } from "./RiskTagSelect";
 import {
   CHANGE_EVENT,
+  withChangeTask,
   useChangeTaskId,
   requestChangeEnvironment,
 } from "./change-context";
 import { RuleWizard } from "./RuleWizard";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   App,
   Button,
@@ -196,11 +197,17 @@ export function useRemote<T>(path: string, deps: any[] = []) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
+  const previousResource = useRef("");
   useEffect(() => {
     const change = () => setVersion((v) => v + 1);
+    const published = (event: StorageEvent) => {
+      if (event.key === "zeus-policy-publication") change();
+    };
+    window.addEventListener("storage", published);
     window.addEventListener(CHANGE_EVENT, change);
     window.addEventListener("hashchange", change);
     return () => {
+      window.removeEventListener("storage", published);
       window.removeEventListener(CHANGE_EVENT, change);
       window.removeEventListener("hashchange", change);
     };
@@ -214,7 +221,9 @@ export function useRemote<T>(path: string, deps: any[] = []) {
       return;
     }
     setLoading(true);
-    setData(undefined);
+    const resource = withChangeTask(path);
+    if (resource !== previousResource.current) setData(undefined);
+    previousResource.current = resource;
     setError("");
     api<T>(path)
       .then((d) => {

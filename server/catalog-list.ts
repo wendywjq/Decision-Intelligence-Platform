@@ -100,6 +100,11 @@ export function listCatalogEntities(
   const pageSize = Number.isFinite(sizeNumber)
     ? Math.max(1, Math.min(100, Math.floor(sizeNumber) || 10))
     : 10;
+  const term = String(query.q || "").trim();
+  const exactFirst =
+    term && query.searchMode !== "exact"
+      ? "CASE WHEN CAST(id AS TEXT)=? OR CAST(json_extract(data,'$.sourceId') AS TEXT)=? OR lower(json_extract(data,'$.enName'))=lower(?) OR lower(json_extract(data,'$.name'))=lower(?) THEN 0 ELSE 1 END, "
+      : "";
   const rows = db
     .prepare(
       prefix +
@@ -107,9 +112,17 @@ export function listCatalogEntities(
         from +
         " WHERE " +
         where +
-        " ORDER BY json_extract(data,'$.updatedAt') DESC,id DESC LIMIT ? OFFSET ?",
+        " ORDER BY " +
+        exactFirst +
+        "json_extract(data,'$.updatedAt') DESC,id DESC LIMIT ? OFFSET ?",
     )
-    .all(...previewValues, ...values, pageSize, (page - 1) * pageSize) as {
+    .all(
+      ...previewValues,
+      ...values,
+      ...(exactFirst ? Array(4).fill(term) : []),
+      pageSize,
+      (page - 1) * pageSize,
+    ) as {
     data: string;
   }[];
   return {

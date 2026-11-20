@@ -1,8 +1,12 @@
 import { syncFullCatalogFixture } from "./full-catalog.ts";
 import { syncDetailFixtures } from "./source-details.ts";
 import Database from "better-sqlite3";
-import { initializeSourceSchema, syncSourceFixture } from "./source-import.ts";
-import { mkdirSync } from "node:fs";
+import {
+  initializeSourceSchema,
+  syncSourceFixture,
+  reconcileTypedReferences,
+} from "./source-import.ts";
+import { mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { modules, type Row } from "../src/catalog.ts";
 export function openDatabase(
@@ -305,7 +309,53 @@ export function openDatabase(
     db,
     path === (process.env.DATABASE_PATH || "data/zeus.sqlite"),
   );
-  if (path === (process.env.DATABASE_PATH || "data/zeus.sqlite"))
+  if (path === (process.env.DATABASE_PATH || "data/zeus.sqlite")) {
     syncFullCatalogFixture(db);
+    reconcileTypedReferences(db);
+    const snapshot = JSON.parse(
+      readFileSync(
+        new URL("../fixtures/feature-5004177.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const history = readFileSync(
+      new URL("../fixtures/rule-2492070-versions.json", import.meta.url),
+      "utf8",
+    );
+    const f = snapshot.detail;
+    db.transaction(() => {
+      db.prepare(
+        "INSERT OR REPLACE INTO source_detail_objects VALUES('ruleVersions','2492070',?)",
+      ).run(history);
+      const marker = "captured-feature:5004177";
+      if (db.prepare("SELECT 1 FROM settings WHERE key=?").get(marker)) return;
+      db.prepare("INSERT INTO settings VALUES(?,?)").run(marker, "true");
+      const inserted = db
+        .prepare("INSERT OR IGNORE INTO entities VALUES(?,?,?)")
+        .run(
+          "featureService",
+          f.id,
+          JSON.stringify({
+            id: f.id,
+            sourceId: f.id,
+            sourceImported: true,
+            sourceKind: "factor",
+            type: "累计因子",
+            name: f.alias,
+            enName: f.name,
+            dataType: "Integer",
+            status: "已就绪未使用",
+            owner: f.owners,
+            createdAt: f.addtime,
+            updatedAt: f.modtime,
+            description: f.description,
+          }),
+        );
+      if (inserted.changes)
+        db.prepare(
+          "INSERT OR IGNORE INTO source_archives VALUES('feature',?,'',?)",
+        ).run(f.id, JSON.stringify(snapshot));
+    })();
+  }
   return db;
 }

@@ -1,3 +1,5 @@
+import { ruleOperator } from "./rule-operators";
+import { CHANGE_EVENT } from "./change-context";
 import { RiskTagChips } from "./RiskTagSelect";
 import { ScenePolicyAdd } from "./ScenePolicyAdd";
 import { RuleReferenceStats } from "./RuleReferenceStats";
@@ -11,7 +13,6 @@ import {
   App,
   Button,
   Descriptions,
-  Drawer,
   Empty,
   Form,
   Input,
@@ -118,7 +119,13 @@ export function ObjectDetails({ value }: { value: any }) {
     />
   );
 }
-export function Conditions({ conditions = [] }: { conditions?: any[] }) {
+export function Conditions({
+  conditions = [],
+  features = [],
+}: {
+  conditions?: any[];
+  features?: Row[];
+}) {
   if (typeof conditions === "string") {
     try {
       conditions = JSON.parse(conditions);
@@ -146,41 +153,66 @@ export function Conditions({ conditions = [] }: { conditions?: any[] }) {
     }
     return p === null || p === undefined ? "—" : String(p);
   };
+  const operand = (value: any) => {
+    const parts = parse(value);
+    if (!Array.isArray(parts)) return variable(parts);
+    return (
+      <Space wrap>
+        {parts.map((p: any, i: number) => {
+          if (!p || typeof p !== "object")
+            return <span key={i}>{variable(p)}</span>;
+          const f = features.find(
+            (f) =>
+              f.enName === p?.value &&
+              (!p.id || Number(f.sourceId || f.id) === Number(p.id)) &&
+              (p.zeusDataType == null ||
+                !f.sourceKind ||
+                f.sourceKind === (p.zeusDataType === 0 ? "param" : "factor")),
+          );
+          return f && typeof p === "object" ? (
+            <Link key={i} target="_blank" to={"/featureDetails?id=" + f.id}>
+              {variable(p)}
+            </Link>
+          ) : (
+            <span key={i}>{variable(p)}</span>
+          );
+        })}
+      </Space>
+    );
+  };
   return (
     <Table<any>
       rowKey={(r, i) => String(r.index ?? i)}
       size="small"
       pagination={false}
-      dataSource={conditions}
+      dataSource={conditions.map((c: any, i: number) =>
+        c.feature
+          ? {
+              ...c,
+              index: i + 1,
+              operatorName: c.operator,
+              leftParamValue: [{ value: c.feature }],
+              rightParamValue: c.value || "",
+            }
+          : c,
+      )}
       columns={[
         { title: "条件", dataIndex: "index", width: 75 },
         {
           title: "左变量",
           dataIndex: "leftParamValue",
-          render: (v) => <span className="source-value">{variable(v)}</span>,
+          render: (v) => <span className="source-value">{operand(v)}</span>,
         },
         {
           title: "操作符",
           dataIndex: "operatorName",
           width: 140,
-          render: (v) =>
-            (
-              ({
-                greaterEqual: "大于等于 ≥",
-                lessEqual: "小于等于 ≤",
-                greater: "大于 >",
-                less: "小于 <",
-                equal: "等于",
-                notEqual: "不等于",
-                contain: "包含",
-                notContain: "不包含",
-              }) as any
-            )[v] || v,
+          render: (v) => ruleOperator(v)?.label || v,
         },
         {
           title: "右变量",
           dataIndex: "rightParamValue",
-          render: (v) => <span className="source-value">{variable(v)}</span>,
+          render: (v) => <span className="source-value">{operand(v)}</span>,
         },
         {
           title: "详细配置",
@@ -202,13 +234,16 @@ export function SourceConfigTable({
   sceneId?: number;
 }) {
   const taskId = useChangeTaskId();
-  const [q, setQ] = useState("");
+  const [params] = useSearchParams();
+  const selectedConfig = params.get("configId") || "";
+  const [q, setQ] = useState(selectedConfig);
+  useEffect(() => setQ(selectedConfig), [selectedConfig]);
   const [status, setStatus] = useState<string>();
   const [edit, setEdit] = useState<any>();
   const [fuse, setFuse] = useState<any>();
   const [form] = Form.useForm();
   const { message } = App.useApp();
-  const [local, setLocal] = useState<Record<string, any>>({});
+
   useEffect(() => {
     if (!taskId) return;
     const pending = sessionStorage.getItem("zeus-edit-policy");
@@ -218,17 +253,15 @@ export function SourceConfigTable({
       form.setFieldsValue(row);
     }
   }, [taskId, items, form]);
-  const rows = items
-    .map((r) => ({ ...r, ...local[r.id] }))
-    .filter(
-      (r) =>
-        !r._removed &&
-        (!q ||
-          `${r.ruleId} ${r.rule?.name || r.name} ${r.ruleGroupName || ""}`
-            .toLowerCase()
-            .includes(q.toLowerCase())) &&
-        (!status || r.status === status),
-    );
+  const rows = items.filter(
+    (r) =>
+      !r._removed &&
+      (!q ||
+        `${r.id} ${r.sourceConfId || ""} ${r.ruleId} ${r.rule?.name || r.name} ${r.groupId || ""} ${r.ruleGroupName || ""}`
+          .toLowerCase()
+          .includes(q.toLowerCase())) &&
+      (!status || r.status === status),
+  );
   return (
     <>
       <Modal
@@ -251,7 +284,7 @@ export function SourceConfigTable({
         <Input
           allowClear
           prefix={<SearchOutlined />}
-          placeholder="搜索规则ID、名称或规则组"
+          placeholder="搜索配置ID、规则或规则组"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -413,13 +446,8 @@ export function SourceConfigTable({
                             "/source/config/" + encodeURIComponent(r.id),
                             "DELETE",
                           );
-                          setLocal((old) => ({
-                            ...old,
-                            [r.id]: {
-                              pendingAction: taskId ? "删除" : undefined,
-                              _removed: !taskId,
-                            },
-                          }));
+                          if (!taskId)
+                            window.dispatchEvent(new Event(CHANGE_EVENT));
                         } catch (e: any) {
                           message.error(e.message);
                         }
@@ -450,10 +478,7 @@ export function SourceConfigTable({
               "PUT",
               v,
             );
-            setLocal((old) => ({
-              ...old,
-              [edit.id]: { ...v, pendingAction: taskId ? "修改" : undefined },
-            }));
+            if (!taskId) window.dispatchEvent(new Event(CHANGE_EVENT));
             sessionStorage.removeItem("zeus-edit-policy");
             setEdit(undefined);
             message.success("本地配置已保存");
@@ -485,9 +510,11 @@ export function SourceConfigTable({
 export function ImportedSceneRules({
   module,
   id,
+  flatGroups,
 }: {
   module: string;
   id: number;
+  flatGroups?: boolean;
 }) {
   const taskId = useChangeTaskId();
   useEffect(() => {
@@ -496,9 +523,18 @@ export function ImportedSceneRules({
   const { data, error, reload } = useRemote<{ items: any[] }>(
     "/source/configs/" + module + "/" + id,
   );
+  const [params] = useSearchParams();
   const [flat, setFlat] = useState(
-    () => !!sessionStorage.getItem("zeus-edit-policy"),
+    () =>
+      !!params.get("configId") || !!sessionStorage.getItem("zeus-edit-policy"),
   );
+  useEffect(() => {
+    if (params.has("configId")) setFlat(true);
+  }, [params]);
+  useEffect(() => {
+    if (!params.has("configId") && !sessionStorage.getItem("zeus-edit-policy"))
+      setFlat(!!flatGroups);
+  }, [flatGroups]);
   const [groupQuery, setGroupQuery] = useState("");
   const groups = useMemo(() => {
     const map = new Map<number, any[]>();
@@ -556,9 +592,13 @@ export function ImportedSceneRules({
               title: "规则/规则组",
               render: (_, r) => (
                 <>
-                  <Link to={"/rulesGroup?id=" + r.id}>
-                    {r.id || ""} {r.name}
-                  </Link>
+                  {r.id ? (
+                    <Link target="_blank" to={"/rulesGroup?id=" + r.id}>
+                      {r.id} {r.name}
+                    </Link>
+                  ) : (
+                    r.name
+                  )}
                 </>
               ),
             },
@@ -704,7 +744,10 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
                   />
                   {display === "交互式" ? (
                     <>
-                      <Conditions conditions={conditions} />
+                      <Conditions
+                        conditions={conditions}
+                        features={refs.data?.items}
+                      />
                       <div className="condition-logic">
                         条件间逻辑：<code>{rule.expression}</code>
                       </div>
@@ -758,21 +801,20 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
           {
             key: "features",
             label: `引用特征信息（${refs.data?.items.length || 0}）`,
-            children: <FeatureList items={refs.data?.items || []} />,
+            children: (
+              <FeatureList ruleReferences items={refs.data?.items || []} />
+            ),
           },
           {
             key: "versions",
             label: "版本信息",
             children: (
-              <Table<any>
-                rowKey={(r, i) => String(r.id ?? i)}
-                dataSource={detail?.versionInfo || []}
-                columns={[
-                  { title: "版本", dataIndex: "version_id" },
-                  { title: "创建人", dataIndex: "creator" },
-                  { title: "表达式", dataIndex: "expression" },
-                  { title: "详情", render: (_, r) => <RawData value={r} /> },
-                ]}
+              <RuleVersionHistory
+                id={id}
+                row={row}
+                logic={rule}
+                versions={detail?.versionInfo}
+                features={refs.data?.items || []}
               />
             ),
           },
@@ -796,25 +838,184 @@ export function ImportedRulePage({ id, row }: { id: number; row: Row }) {
     </>
   );
 }
-export function FeatureList({ items }: { items: Row[] }) {
+function VersionLogic({
+  definition,
+  features,
+}: {
+  definition: any;
+  features: Row[];
+}) {
+  const conditions =
+    definition.rule_conditions || definition.ruleConditions || [];
+  const [mode, setMode] = useState(conditions.length ? "交互式" : "表达式");
+  return (
+    <div className="detail-section">
+      <Tabs
+        activeKey={mode}
+        onChange={setMode}
+        items={["交互式", "表达式"].map((label) => ({ key: label, label }))}
+      />
+      {mode === "交互式" ? (
+        <>
+          <Conditions conditions={conditions} features={features} />
+          <div className="condition-logic">
+            条件间逻辑：
+            <code>{definition.conditionLogic || definition.expression}</code>
+          </div>
+        </>
+      ) : (
+        <pre className="code-editor">
+          {definition.origin_expression ||
+            definition.originExpression ||
+            definition.expression}
+        </pre>
+      )}
+    </div>
+  );
+}
+function RuleVersionHistory({ id, row, logic, versions, features }: any) {
+  const local = useRemote<any>(entityPath("rulePage", id) + "/versions");
+  const rows = [
+    ...(local.data?.items || []).map((v: any) => ({
+      key: "local:" + v.id,
+      label: "本地修改前快照",
+      time: v.createdAt,
+      author: v.data.modifier || v.data.owner,
+      definition: v.data,
+    })),
+    ...(versions || []).map((v: any) => ({
+      key: "source:" + (v.version_id ?? v.id),
+      label: String(v.version_id ?? v.versionId ?? "来源版本"),
+      time: v.addtime,
+      author: v.creator,
+      definition: v,
+    })),
+  ];
+  if (!versions?.length || local.data?.items?.length)
+    rows.unshift({
+      key: "current",
+      label: "当前定义",
+      time: row.updatedAt,
+      author: row.modifier || logic.modifier,
+      definition: logic,
+    });
+  return (
+    <>
+      <Table
+        rowKey="key"
+        dataSource={rows}
+        columns={[
+          { title: "版本", dataIndex: "label" },
+          {
+            title: "名称",
+            render: (_, v: any) => (
+              <>
+                {v.definition.alias || v.definition.name}
+                <div className="secondary-name">
+                  {v.definition.enName ||
+                    (v.definition.alias && v.definition.name)}
+                </div>
+              </>
+            ),
+          },
+          {
+            title: "配置方式",
+            render: (_, v: any) =>
+              (
+                ({
+                  7: "交互式",
+                  8: "决策表",
+                  9: "代码模式",
+                  2: "表达式",
+                }) as any
+              )[v.definition.edit_mode ?? v.definition.editMode] ||
+              v.definition.editMode ||
+              "—",
+          },
+          {
+            title: "创建",
+            render: (_, v: any) => (
+              <>
+                {formatDate(v.time)}
+                <div>{v.author}</div>
+              </>
+            ),
+          },
+        ]}
+        expandable={{
+          expandRowByClick: true,
+          expandedRowRender: (v) => (
+            <VersionLogic definition={v.definition} features={features} />
+          ),
+        }}
+        pagination={{ pageSize: 10 }}
+      />
+      {!versions?.length && (
+        <p className="muted">当前快照未收录该规则的 Zeus 历史版本。</p>
+      )}
+    </>
+  );
+}
+export function FeatureList({
+  items,
+  ruleReferences = false,
+}: {
+  items: Row[];
+  ruleReferences?: boolean;
+}) {
   return (
     <Table<any>
       rowKey="id"
       dataSource={items}
       columns={[
-        { title: "特征ID", render: (_, r) => r.sourceId || r.id },
         {
-          title: "名称",
+          title: "特征ID",
           render: (_, r) => (
-            <Link to={"/featureDetails?id=" + r.id}>
+            <Link target="_blank" to={"/featureDetails?id=" + r.id}>
+              {r.sourceId || r.id}
+            </Link>
+          ),
+        },
+        {
+          title: ruleReferences ? "特征名称" : "名称",
+          render: (_, r) => (
+            <Link target="_blank" to={"/featureDetails?id=" + r.id}>
               {r.name}
               <div className="secondary-name">{r.enName}</div>
             </Link>
           ),
         },
-        { title: "特征类型", dataIndex: "type" },
-        { title: "结果类型", dataIndex: "dataType" },
-        { title: "状态", dataIndex: "status" },
+        ...(ruleReferences
+          ? [
+              { title: "状态", dataIndex: "status" },
+              {
+                title: "被引用次数",
+                render: (_: any, r: Row) => r.refCount ?? "—",
+              },
+              {
+                title: "创建",
+                render: (_: any, r: Row) => (
+                  <>
+                    {formatDate(r.createdAt)}
+                    <div>{r.creator}</div>
+                  </>
+                ),
+              },
+              {
+                title: "最后修改",
+                render: (_: any, r: Row) => (
+                  <>
+                    {formatDate(r.updatedAt)}
+                    <div>{r.modifier || r.owner}</div>
+                  </>
+                ),
+              },
+            ]
+          : [
+              { title: "特征类型", dataIndex: "type" },
+              { title: "结果类型", dataIndex: "dataType" },
+              { title: "状态", dataIndex: "status" },
+            ]),
       ]}
     />
   );

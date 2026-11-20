@@ -1,0 +1,431 @@
+[
+  {
+    "version_id": 6,
+    "name": "rule_consec_dl_zoology_refer_id_customize_manualreview_takeneffect_v261015",
+    "alias": "代理审核_生态_业务线_定制_短路送人审_生效_v261117",
+    "edit_mode": 7,
+    "addtime": "2026-11-19 16:58",
+    "creator": "wb_kongdesong",
+    "expression": "((1&&2)||(3&&4)||(5&&6)||(7&&8))",
+    "rule_conditions": [
+      {
+        "index": 1,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"11612\""
+        ]
+      },
+      {
+        "index": 2,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"22076\""
+        ]
+      },
+      {
+        "index": 3,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"10552\""
+        ]
+      },
+      {
+        "index": 4,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"24108\""
+        ]
+      },
+      {
+        "index": 5,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          40073,
+          40035
+        ]
+      },
+      {
+        "index": 6,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 21768,
+            "alias": "21768-二级品类",
+            "value": "factor_dp_ugc_text_shopback_cat1id"
+          }
+        ],
+        "rightParamValue": [
+          51,
+          2160,
+          2586,
+          48,
+          53,
+          54,
+          2634,
+          2635,
+          211,
+          212,
+          263,
+          277,
+          2413
+        ]
+      },
+      {
+        "index": 7,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"40083\""
+        ]
+      },
+      {
+        "index": 8,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 21768,
+            "alias": "21768-二级品类",
+            "value": "factor_dp_ugc_text_shopback_cat1id"
+          }
+        ],
+        "rightParamValue": [
+          2160,
+          212
+        ]
+      }
+    ]
+  },
+  {
+    "version_id": 5,
+    "name": "rule_consec_dl_zoology_refer_id_customize_manualreview_takeneffect_v261015",
+    "alias": "代理审核_生态_业务线_定制_短路送人审_生效_v261117",
+    "edit_mode": 7,
+    "addtime": "2026-11-17 17:46",
+    "creator": "wb_kongdesong",
+    "expression": "((1&&2)||(3&&4)||(5&&6))",
+    "rule_conditions": [
+      {
+        "index": 1,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"11612\""
+        ]
+      },
+      {
+        "index": 2,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"22076\""
+        ]
+      },
+      {
+        "index": 3,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"10552\""
+        ]
+      },
+      {
+        "index": 4,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"24108\""
+        ]
+      },
+      {
+        "index": 5,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          40073,
+          40035
+        ]
+      },
+      {
+        "index": 6,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 21768,
+            "alias": "21768-二级品类",
+            "value": "factor_dp_ugc_text_shopback_cat1id"
+          }
+        ],
+        "rightParamValue": [
+          51,
+          2160,
+          2586,
+          48,
+          53,
+          54,
+          2634,
+          2635,
+          211,
+          212,
+          263,
+          277,
+          2413
+        ]
+      }
+    ]
+  },
+  {
+    "version_id": 4,
+    "name": "rule_consec_dl_zoology_refer_id_customize_manualreview_takeneffect_v261015",
+    "alias": "代理审核_生态_业务线_定制_短路送人审_生效_v261015",
+    "edit_mode": 7,
+    "addtime": "2026-11-06 10:18",
+    "creator": "wb_kongdesong",
+    "expression": "((1&&2)||(3&&4))",
+    "rule_conditions": [
+      {
+        "index": 1,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"11612\""
+        ]
+      },
+      {
+        "index": 2,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"22076\""
+        ]
+      },
+      {
+        "index": 3,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"10552\""
+        ]
+      },
+      {
+        "index": 4,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"24108\""
+        ]
+      }
+    ]
+  },
+  {
+    "version_id": 3,
+    "name": "rule_consec_dl_zoology_refer_id_customize_manualreview_takeneffect_v261015",
+    "alias": "代理审核_生态_业务线_定制_短路送人审_生效_v261015",
+    "edit_mode": 7,
+    "addtime": "2026-10-15 17:07",
+    "creator": "wb_kongdesong",
+    "expression": "1&&2",
+    "rule_conditions": [
+      {
+        "index": 1,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"11612\""
+        ]
+      },
+      {
+        "index": 2,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"22076\""
+        ]
+      }
+    ]
+  },
+  {
+    "version_id": 2,
+    "name": "rule_consec_dl_zoology_refer_id_customize_manualreview_mark_v261013",
+    "alias": "代理审核_生态_业务线_定制_短路送人审_标记_v261013",
+    "edit_mode": 7,
+    "addtime": "2026-10-15 11:43",
+    "creator": "wb_kongdesong",
+    "expression": "1&&2",
+    "rule_conditions": [
+      {
+        "index": 1,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 24550,
+            "alias": "24550-内容安全业务场景id",
+            "value": "factor_consec_referid"
+          }
+        ],
+        "rightParamValue": [
+          "\"11612\""
+        ]
+      },
+      {
+        "index": 2,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"22076\""
+        ]
+      }
+    ]
+  },
+  {
+    "version_id": 1,
+    "name": "rule_consec_dl_zoology_refer_id_customize_manualreview_mark_v261013",
+    "alias": "代理审核_生态_业务线_定制_短路送人审_标记_v261013",
+    "edit_mode": 7,
+    "addtime": "2026-10-13 15:05",
+    "creator": "wb_kongdesong",
+    "expression": "1&&2",
+    "rule_conditions": [
+      {
+        "index": 1,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 4388,
+            "alias": "4388-业务id",
+            "value": "referid"
+          }
+        ],
+        "rightParamValue": [
+          11612
+        ]
+      },
+      {
+        "index": 2,
+        "operatorName": "equal",
+        "leftParamValue": [
+          {
+            "id": 7945,
+            "alias": "7945-任务流ID",
+            "value": "taskFlowId"
+          }
+        ],
+        "rightParamValue": [
+          "\"22076\""
+        ]
+      }
+    ]
+  }
+]

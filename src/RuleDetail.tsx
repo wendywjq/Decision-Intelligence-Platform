@@ -1,3 +1,5 @@
+import { Link } from "./navigation";
+import { ruleOperator } from "./rule-operators";
 import { RiskTagChips } from "./RiskTagSelect";
 import { RuleReferenceStats } from "./RuleReferenceStats";
 import { useState } from "react";
@@ -25,7 +27,7 @@ import { api, entityPath } from "./api";
 import { moduleMap } from "./catalog";
 import { EntityEditor, PageHeader, Section, useRemote } from "./components";
 import { VersionList } from "./ModulePage";
-import { ImportedRulePage } from "./SourceExamples";
+import { FeatureList, ImportedRulePage } from "./SourceExamples";
 export function RuleDetail() {
   const [params] = useSearchParams();
   const id = Number(params.get("id"));
@@ -224,8 +226,10 @@ export function RuleDetail() {
                       ? rule.ruleConditions.map((c: any, i: number) => ({
                           id: i + 1,
                           left: c.feature,
-                          op: operators[c.operator] || c.operator,
-                          right: c.value,
+                          op: ruleOperator(c.operator)?.label || c.operator,
+                          right: Array.isArray(c.value)
+                            ? c.value.join("、")
+                            : c.value,
                         }))
                       : [
                           {
@@ -241,9 +245,21 @@ export function RuleDetail() {
                     {
                       title: "左变量",
                       dataIndex: "left",
-                      render: (v) => (
-                        <a onClick={() => navigate("/featureService")}>{v}</a>
-                      ),
+                      render: (v) => {
+                        const f = features.data?.items.find(
+                          (r) => r.enName === v,
+                        );
+                        return f ? (
+                          <Link
+                            target="_blank"
+                            to={"/featureDetails?id=" + f.id}
+                          >
+                            {v}
+                          </Link>
+                        ) : (
+                          v
+                        );
+                      },
                     },
                     { title: "操作符", dataIndex: "op" },
                     { title: "右变量", dataIndex: "right" },
@@ -371,19 +387,7 @@ export function RuleDetail() {
         </>
       )}
       {tab === "引用特征信息" && (
-        <Table
-          rowKey="id"
-          dataSource={features.data?.items.filter((r) =>
-            rule.expression?.includes(r.enName),
-          )}
-          columns={[
-            { title: "特征ID", dataIndex: "id" },
-            { title: "特征名称", dataIndex: "name" },
-            { title: "英文名称", dataIndex: "enName" },
-            { title: "数据类型", dataIndex: "dataType" },
-            { title: "状态", dataIndex: "status" },
-          ]}
-        />
+        <FeatureList ruleReferences items={features.data?.items || []} />
       )}
       {tab === "版本信息" && <VersionList module="rulePage" id={id} />}{" "}
       {tab === "被引用情况" && <ReferenceList id={id} />}

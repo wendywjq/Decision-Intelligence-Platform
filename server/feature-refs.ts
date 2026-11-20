@@ -91,3 +91,38 @@ export function featureDependencyNames(
   } catch {}
   return names;
 }
+
+/** In Zeus a parameter and a factor may have the same name or numeric source ID. */
+export function typedFeatureReferences(logic: any): Map<string, Set<number>> {
+  const refs = new Map<string, Set<number>>();
+  const decode = (value: any) => {
+    if (typeof value !== "string") return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  };
+  const visit = (v: any) => {
+    if (!v || typeof v !== "object") return;
+    if (
+      typeof v.value === "string" &&
+      Number.isSafeInteger(v.id) &&
+      v.id > 0 &&
+      [0, 1].includes(v.zeusDataType)
+    ) {
+      const ids = refs.get(v.value) || new Set<number>();
+      ids.add(v.zeusDataType === 0 ? 1000000000 + v.id : v.id);
+      refs.set(v.value, ids);
+    }
+    for (const child of Object.values(v))
+      if (child && typeof child === "object") visit(child);
+  };
+  const conditions = decode(logic?.ruleConditions);
+  if (Array.isArray(conditions))
+    for (const c of conditions) {
+      visit(decode(c.leftParamValue));
+      visit(decode(c.rightParamValue));
+    }
+  return refs;
+}
